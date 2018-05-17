@@ -1,8 +1,8 @@
 import sys
 
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 filename = sys.argv[1] if len(sys.argv) > 1 else 'benchmark.csv'
 data = pd.read_csv(filename)
