@@ -14,11 +14,12 @@ long long int benchmark(long col_size, T default_value) {
     // Average multiple runs
     std::vector<long long int> times;
     for (int i = 0; i < ITERATIONS; i++) {
-        auto start = std::chrono::steady_clock::now();
+        auto start = std::chrono::high_resolution_clock::now();
         for (int j = 0;j < attribute_vector.size(); j++){
             volatile auto o3_trick = attribute_vector[j];
         }
-        auto time = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start);
+        auto end = std::chrono::high_resolution_clock::now();
+        auto time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
         times.push_back(time.count());
     }
     return std::accumulate(times.begin(), times.end(), (long long int) 0) / ITERATIONS;
