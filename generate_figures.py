@@ -13,13 +13,14 @@ for dtype in np.unique(data['Data type']):
     dtype_dfs.append(data[data['Data type'] == dtype])
 
 for df in dtype_dfs:
-    bandwidth = df['Column size in KB'] / df[tkey] / 1024 / 1024
+    bandwidth = df['Column size in KB'] / df[tkey] / 1024 / 1024 * 1e9
     plt.plot(df['Column size in KB'], bandwidth, label=df['Data type'].iloc[0])
 plt.legend()
 plt.xlabel('Attribute Vector Size (in KB)')
 plt.xscale('log')
 plt.ylabel('Effective Scan Bandwidth (in GB/s)')
 plt.ylim(ymin=0)
+plt.legend(loc=2, prop={'size': 10})
 plt.savefig('bandwidth.png')
 plt.clf()
 
@@ -30,4 +31,5 @@ plt.xlabel('Attribute Vector Size (in KB)')
 plt.xscale('log')
 plt.ylabel('Time elapsed (in ns)')
 plt.ylim(ymin=0)
+plt.legend(loc=2, prop={'size': 10})
 plt.savefig('time.png')
