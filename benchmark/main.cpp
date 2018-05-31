@@ -5,6 +5,7 @@
 #include <numeric>
 #include <chrono>
 #include <thread>
+#include <algorithm>
 #include <random>
 
 static const uint64_t DB_SIZES[] = {8, 16, 32, 64, 128, 512, 1024, 4096, 16384, 65536,
@@ -12,13 +13,13 @@ static const uint64_t DB_SIZES[] = {8, 16, 32, 64, 128, 512, 1024, 4096, 16384, 
 static const int ITERATIONS = 3;
 
 void clear_cache() {
-  std::vector<sdt::int8_t> clear = std::vector<>();
+  std::vector<std::int8_t> clear;
 
 #ifdef _ARCH_PPC64
   // maximum cache size for a CPU is:
   // 512KB (L2 inclusive) + 96MB L3 + 128MB L4
   // ==> 224.5 MB ~256MB
-  clear.resize(256 * 1024 * 1024, 1336);
+  clear.resize(256 * 1024 * 1024, 42);
 #else
   clear.resize(500 * 1000 * 1000, 42);
 #endif
@@ -62,7 +63,7 @@ std::vector<long long int> benchmark(uint64_t col_size, int col_count, int threa
     for (int i = 0; i < ITERATIONS; i++) {
         auto attribute_vector = generate_data<T>(col_length * col_count);
         uint64_t start_index = 0;
-        clear_cache()
+        clear_cache();
 
         auto start = std::chrono::high_resolution_clock::now();
 
