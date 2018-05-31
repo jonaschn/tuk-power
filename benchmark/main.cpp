@@ -11,6 +11,17 @@ static const uint64_t DB_SIZES[] = {8, 16, 32, 64, 128, 512, 1024, 4096, 16384, 
                                     1048576, 16777216, 67108864, 268435456, 1073741824, 4294967296};
 static const int ITERATIONS = 3;
 
+void clear_cache() {
+  std::vector<int> clear = std::vector<int>();
+  clear.resize(500 * 1000 * 1000, 42);
+
+  for (uint i = 0; i < clear.size(); i++) {
+    clear[i] += 1;
+  }
+
+  clear.resize(0);
+}
+
 template <class T>
 static std::vector<T> generate_data(size_t size)
 {
@@ -42,7 +53,6 @@ std::vector<long long int> benchmark(uint64_t col_size, int col_count, int threa
     std::vector<long long int> times;
     for (int i = 0; i < ITERATIONS; i++) {
         auto attribute_vector = generate_data<T>(col_length * col_count);
-
         auto start = std::chrono::high_resolution_clock::now();
 
         uint64_t start_index = 0;
@@ -52,6 +62,7 @@ std::vector<long long int> benchmark(uint64_t col_size, int col_count, int threa
             threads.push_back(thread);
             start_index = end_index;
         }
+
         for(std::thread* thread: threads)
             (*thread).join();
 
@@ -64,7 +75,7 @@ std::vector<long long int> benchmark(uint64_t col_size, int col_count, int threa
 }
 
 int main(int argc, char* argv[]) {
-
+    // USAGE: ./benchmark <column count> <thread count>
     // col_count>1 --> row-based layout
     int col_count = 1;
     if(argc > 1)
