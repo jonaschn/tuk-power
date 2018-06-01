@@ -3,43 +3,36 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 
-tkey = "Time in ns"
-fig = plt.figure(1, figsize=(9, 6))
-ax = fig.add_subplot(111)
+tkey     = "Time in ns"
+colszkey = 'Column size in KB'
+dtypekey = 'Data type'
 
 filename = sys.argv[1] if len(sys.argv) > 1 else 'benchmark.csv'
 data = pd.read_csv(filename)
+
+csizes = np.unique(data[colszkey])
 dtype_dfs = []
 
-bandwidths=[]
-labels=[]
-colsizes=[]
-
-for dtype in np.unique(data['Data type']):
-  dtype_dfs.append(data[data['Data type'] == dtype])
+for dtype in np.unique(data[dtypekey]):
+    dtype_dfs.append(data[data[dtypekey] == dtype])
 
 for df in dtype_dfs:
-  bandwidths.append(df['Column size in KB'] / df[tkey] / 1024 / 1024 * 1e9)
-  labels.append(df['Data type'].iloc[0])
-  colsizes.append(df['Column size in KB'].iloc[0])
+    bandwidth = df[colszkey] / df[tkey] / 1024 / 1024 * 1e9
+    bandwidth_means = [ np.mean(bandwidth[df[colszkey] == csz]) for csz in csizes ]
+    bandwidth_stds  = [  np.std(bandwidth[df[colszkey] == csz]) for csz in csizes ]
 
-df["bandwidth"] = df['Column size in KB'] / df [tkey] / 1024 / 1024 * 1e9
+    plt.errorbar(x=csizes,
+                 y=bandwidth_means,
+                 yerr=bandwidth_stds,
+                 label=df[dtypekey].iloc[0])
 
-fig, ax = plt.subplots()
-plot = sns.factorplot(kind='box',
-    y='bandwidth',
-    x='Column size in KB',
-    hue='Data type',
-    data=df[df['Data type'] == 'int8'])
-ax.legend(loc=2, prop={'size': 10})
+plt.legend()
+plt.xlabel('Attribute Vector Size (in KB)')
+plt.xscale('log', basex=2)
+plt.gca().xaxis.grid(True)
+plt.ylabel('Effective Scan Bandwidth (in GB/s)')
+plt.ylim(ymin=0)
+plt.legend(loc=2, prop={'size': 10})
 plt.savefig(filename.replace('.csv','.png'))
-
-#plt.legend()
-#plt.xlabel('Attribute Vector Size (in KB)')
-#plt.xscale('log')
-#plt.ylabel('Effective Scan Bandwidth (in GB/s)')
-#plt.ylim(ymin=0)
-#plt.legend(loc=2, prop={'size': 10})
-#plt.clf()
+plt.clf()
