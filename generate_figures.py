@@ -7,6 +7,7 @@ import pandas as pd
 tkey     = "Time in ns"
 colszkey = 'Column size in KB'
 dtypekey = 'Data type'
+colors=['red', 'green', 'blue', 'cyan']
 
 filename = sys.argv[1] if len(sys.argv) > 1 else 'benchmark.csv'
 data = pd.read_csv(filename)
@@ -17,7 +18,7 @@ dtype_dfs = []
 for dtype in np.unique(data[dtypekey]):
     dtype_dfs.append(data[data[dtypekey] == dtype])
 
-for df in dtype_dfs:
+for idx,df in enumerate(dtype_dfs):
     bandwidth = df[colszkey] / df[tkey] / 1024 / 1024 * 1e9
     bandwidth_means = [ np.mean(bandwidth[df[colszkey] == csz]) for csz in csizes ]
     bandwidth_stds  = [  np.std(bandwidth[df[colszkey] == csz]) for csz in csizes ]
@@ -25,7 +26,9 @@ for df in dtype_dfs:
     plt.errorbar(x=csizes,
                  y=bandwidth_means,
                  yerr=bandwidth_stds,
-                 label=df[dtypekey].iloc[0])
+                 label=df[dtypekey].iloc[0],
+                 color=colors[idx], alpha=0.7,
+                 ecolor='gray', lw=2, capsize=5, capthick=2)
 
 plt.legend()
 plt.xlabel('Attribute Vector Size (in KB)')
