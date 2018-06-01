@@ -10,7 +10,7 @@
 
 static const uint64_t DB_SIZES[] = {8, 16, 32, 64, 128, 512, 1024, 4096, 16384, 65536,
                                     1048576, 16777216, 67108864, 268435456, 1073741824, 4294967296};
-static const int ITERATIONS = 3;
+static const int ITERATIONS = 6;
 
 void clear_cache() {
   std::vector<std::int8_t> clear;
