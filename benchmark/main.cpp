@@ -5,11 +5,31 @@
 #include <numeric>
 #include <chrono>
 #include <thread>
+#include <algorithm>
 #include <random>
 
 static const uint64_t DB_SIZES[] = {8, 16, 32, 64, 128, 512, 1024, 4096, 16384, 65536,
                                     1048576, 16777216, 67108864, 268435456, 1073741824, 4294967296};
-static const int ITERATIONS = 3;
+static const int ITERATIONS = 6;
+
+void clear_cache() {
+  std::vector<std::int8_t> clear;
+
+#ifdef _ARCH_PPC64
+  // maximum cache size for a CPU is:
+  // 512KB (L2 inclusive) + 96MB L3 + 128MB L4
+  // ==> 224.5 MB ~256MB
+  clear.resize(256 * 1024 * 1024, 42);
+#else
+  clear.resize(500 * 1000 * 1000, 42);
+#endif
+
+  for (uint i = 0; i < clear.size(); i++) {
+    clear[i] += 1;
+  }
+
+  clear.resize(0);
+}
 
 template <class T>
 static std::vector<T> generate_data(size_t size)
@@ -42,16 +62,18 @@ std::vector<long long int> benchmark(uint64_t col_size, int col_count, int threa
     std::vector<long long int> times;
     for (int i = 0; i < ITERATIONS; i++) {
         auto attribute_vector = generate_data<T>(col_length * col_count);
+        uint64_t start_index = 0;
+        clear_cache();
 
         auto start = std::chrono::high_resolution_clock::now();
 
-        uint64_t start_index = 0;
         for(int j=0;j < thread_count;j++){
             uint64_t end_index = start_index + part_len + (j < overhang ? 1 : 0);
             auto thread = new std::thread(thread_func<T>, std::ref(attribute_vector), col_count, start_index, end_index);
             threads.push_back(thread);
             start_index = end_index;
         }
+
         for(std::thread* thread: threads)
             (*thread).join();
 
@@ -64,7 +86,7 @@ std::vector<long long int> benchmark(uint64_t col_size, int col_count, int threa
 }
 
 int main(int argc, char* argv[]) {
-
+    // USAGE: ./benchmark <column count> <thread count>
     // col_count>1 --> row-based layout
     int col_count = 1;
     if(argc > 1)
