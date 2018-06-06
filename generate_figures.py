@@ -10,6 +10,7 @@ dtypekey = 'Data type'
 colors=['red', 'green', 'blue', 'cyan']
 
 filename = sys.argv[1] if len(sys.argv) > 1 else 'benchmark.csv'
+system_type = sys.argv[2] if len(sys.argv) > 2 else 'power'
 data = pd.read_csv(filename)
 
 csizes = np.unique(data[colszkey])
@@ -30,12 +31,21 @@ for idx,df in enumerate(dtype_dfs):
                  color=colors[idx], alpha=0.7,
                  ecolor='gray', lw=2, capsize=5, capthick=2)
 
+#textstr = \"Cache Line: 64B\\nL1d: 32KB\\nL1i: 32KB\\nL2: 256KB\\nL3: 38400KB\"\n",
+fig, ax = plt.subplots()
+if system_type == 'intel':
+    ax.axvline(32)
+    ax.axvline(256)
+    ax.axvline(38400)
 plt.legend()
 plt.xlabel('Attribute Vector Size (in KB)')
 plt.xscale('log', basex=2)
 plt.gca().xaxis.grid(True)
 plt.ylabel('Effective Scan Bandwidth (in GB/s)')
-plt.ylim(ymin=0, ymax=100)
+if system_type == 'intel':
+    plt.ylim(ymin=0, ymax=20)
+else:
+    plt.ylim(ymin=0, ymax=100)
 plt.legend(loc=2, prop={'size': 10})
 plt.savefig(filename.replace('.csv','.png'))
 plt.clf()
