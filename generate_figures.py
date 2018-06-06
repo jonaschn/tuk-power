@@ -31,7 +31,6 @@ for idx,df in enumerate(dtype_dfs):
                  color=colors[idx], alpha=0.7,
                  ecolor='gray', lw=2, capsize=5, capthick=2)
 
-#textstr = \"Cache Line: 64B\\nL1d: 32KB\\nL1i: 32KB\\nL2: 256KB\\nL3: 38400KB\"\n",
 fig, ax = plt.subplots()
 if system_type == 'intel':
     ax.axvline(32)
