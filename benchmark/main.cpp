@@ -45,8 +45,11 @@ static std::vector<T> generate_data(size_t size)
     return data;
 }
 
+static volatile bool thread_flag = false;
 template <class T>
 void thread_func(std::vector<T>& elements, int col_count, uint64_t start_index, uint64_t end_index){
+    while(!thread_flag)
+        ;
     for (uint64_t j = start_index;j < end_index; j++){
         volatile auto o3_trick = elements[j*col_count + 0]; // read first column
     }
@@ -67,22 +70,28 @@ std::vector<long long int> benchmark(uint64_t col_size, int col_count, int threa
         uint64_t start_index = 0;
         clear_cache();
 
-        auto start = std::chrono::high_resolution_clock::now();
-
-        for(int j=0;j < thread_count;j++){
+        for (int j = 0; j < thread_count; j++) {
             uint64_t end_index = start_index + part_len + (j < overhang ? 1 : 0);
-            auto thread = new std::thread(thread_func<T>, std::ref(attribute_vector), col_count, start_index, end_index);
+            auto thread = new std::thread(thread_func<T>, std::ref(attribute_vector), col_count, start_index,
+                                          end_index);
             threads.push_back(thread);
             start_index = end_index;
         }
+        auto start = std::chrono::high_resolution_clock::now();
+        thread_flag = true;
 
-        for(std::thread* thread: threads)
+        for (std::thread *thread: threads)
             (*thread).join();
 
         auto end = std::chrono::high_resolution_clock::now();
         auto time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
         times.push_back(time.count());
-        threads.clear();
+
+        while (!threads.empty()) {
+            delete threads.back();
+            threads.pop_back();
+        }
+        thread_flag = false;
     }
     return times;
 }
