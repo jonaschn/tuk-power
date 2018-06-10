@@ -1,4 +1,5 @@
-#!/bin/bash -x
+#!/bin/bash
+# set -x
 
 if lscpu | grep -E '^Model name\:\s+POWER'; then
   IS_POWER=true
