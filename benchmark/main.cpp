@@ -8,10 +8,15 @@
 #include <algorithm>
 #include <random>
 
-static const uint64_t DB_SIZES[] = {8, 16, 32, 64, 128, 512, 1024, 4096, 16384, 65536,
-                                    1048576, 16777216, 67108864, 268435456, 1073741824, 4294967296,
-                                    8589934592, 17179869184, 34359738368, 68719476736, 137438953472,
-                                    274877906944};
+static const uint64_t KiB = 1024;
+static const uint64_t MiB = 1024 * KiB;
+static const uint64_t GiB = 1024 * MiB;
+static const uint64_t DB_SIZES[] = {8, 16, 32, 64, 128, 512,
+                                    1 * KiB, 4 * KiB, 16 * KiB, 64 * KiB,
+                                    1 * MiB, 16 * MiB, 64 * MiB, 256 * MiB,
+                                    1 * GiB, 4 * GiB,
+                                    8 * GiB, 16 * GiB, 32 * GiB, 64 * GiB,
+                                    128 * GiB, 256 * GiB};
 static const int ITERATIONS = 6;
 
 void clear_cache() {
