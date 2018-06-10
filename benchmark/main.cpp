@@ -114,6 +114,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Column size in KB,Data type,Time in ns" << std::endl;
     for (auto size: DB_SIZES){
+        std::cerr << "benchmarking " << (size / 1024.0f) << std::endl;
         auto int8_time = benchmark<std::int8_t>(size, col_count, thread_count);
         for(long long int time: int8_time)
             std::cout << (size / 1024.0f) << ",int8," << time << std::endl;
