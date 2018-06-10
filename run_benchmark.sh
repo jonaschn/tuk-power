@@ -1,7 +1,5 @@
 #!/bin/bash -x
 
-function join_by { local IFS="$1"; shift; echo "$*"; }
-
 if lscpu | grep -E '^Model name\:\s+POWER'; then
   IS_POWER=true
   FOLDER="power-results"
@@ -21,6 +19,7 @@ else
   SMT_CONFIGURATIONS=2
   CORE_BINDINGS=("`seq -s, 0 1 8`"
                  "`seq -s, 0 1 8`,`seq -s, 120 8 134`")
+  MEMNODE=0
   THREAD_COUNTS=(8 16)
   SMT_SETTINGS=(1 2)
 fi
@@ -44,13 +43,20 @@ for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
     NTHREADS="${THREAD_COUNTS[i]}"
     SMTLVL="${SMT_SETTINGS[i]}"
 
+
     if $IS_POWER; then
       ppc64_cpu --smt="$SMTLVL"
     fi
 
     FILENAME=benchmark-prefetch"$PREFETCH_SET"-smt"$SMTLVL"-thread"$NTHREADS"
-    numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 1  "$NTHREADS" > $FOLDER/$FILENAME-colstore.csv
-    numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 10 "$NTHREADS" > $FOLDER/$FILENAME-rowstore.csv
+    if $IS_POWER; then
+        numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 1  "$NTHREADS" > $FOLDER/$FILENAME-colstore.csv
+        numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 10 "$NTHREADS" > $FOLDER/$FILENAME-rowstore.csv
+    else
+        CPU="${CORE_BINDINGS[i]}"
+        numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark 1  "$NTHREADS" > $FOLDER/$FILENAME-colstore.csv
+        numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark 10 "$NTHREADS" > $FOLDER/$FILENAME-rowstore.csv
+    fi
   done
 done
 
