@@ -31,13 +31,13 @@ mkdir -p "$FOLDER"
 
 for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
   if $IS_POWER; then
-	sudo ppc64_cpu --dscr="$PREFETCH_SET"
+    ppc64_cpu --dscr="$PREFETCH_SET"
   else
     if [[ $PREFETCH_SET ]]; then
-		benchmark/prefetching_intel -d
-	else
-		benchmark/prefetching_intel -e
-	fi
+      benchmark/prefetching_intel -d
+    else
+      benchmark/prefetching_intel -e
+    fi
   fi  
 
   for ((i=0; i<$SMT_CONFIGURATIONS; i++)); do
@@ -45,9 +45,9 @@ for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
     SMTLVL="${SMT_SETTINGS[i]}"
 
     if $IS_POWER; then
-      sudo ppc64_cpu --smt="$SMTLVL"
+      ppc64_cpu --smt="$SMTLVL"
     fi
-	
+
     FILENAME=benchmark-prefetch"$PREFETCH_SET"-smt"$SMTLVL"-thread"$NTHREADS"
     numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 1  "$NTHREADS" > $FOLDER/$FILENAME-colstore.csv
     numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 10 "$NTHREADS" > $FOLDER/$FILENAME-rowstore.csv
@@ -56,4 +56,6 @@ done
 
 if [ ! $IS_POWER ]; then
   benchmark/prefetching_intel -e  
+else
+  chmod 666 "$FOLDER"/*
 fi
