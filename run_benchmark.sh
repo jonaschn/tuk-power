@@ -14,7 +14,7 @@ if lscpu | grep -E '^Model name\:\s+POWER'; then
 else
   IS_POWER=false
   FOLDER="intel-results"
-  PREFETCHER_SETTINGS=(1 0) # be careful: 0 is standard, and 1 is off!
+  PREFETCHER_SETTINGS=(1 0)
   # on the rapa.eaalab machine, these are the NUMA node0 CPUs
   SMT_CONFIGURATIONS=2
   CORE_BINDINGS=("`seq -s, 0 1 8`"
