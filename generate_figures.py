@@ -31,11 +31,10 @@ for idx,df in enumerate(dtype_dfs):
                  color=colors[idx], alpha=0.7,
                  ecolor='gray', lw=2, capsize=5, capthick=2)
 
-fig, ax = plt.subplots()
 if system_type == 'intel':
-    ax.axvline(32)
-    ax.axvline(256)
-    ax.axvline(38400)
+    plt.axvline(x=32)
+    plt.axvline(x=256)
+    plt.axvline(x=38400)
 plt.legend()
 plt.xlabel('Attribute Vector Size (in KB)')
 plt.xscale('log', basex=2)
