@@ -5,7 +5,6 @@ if lscpu | grep -E '^Model name\:\s+POWER'; then
   IS_POWER=true
   FOLDER="power-results"
   SMT_SETTINGS=(1 2 4 8)
-  # use seq start+offset 8 end for generating these sequences for taskset
   CPUNODE=1
   MEMNODE=1
   SMT_CONFIGURATIONS=4
