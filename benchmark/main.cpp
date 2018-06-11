@@ -11,12 +11,19 @@
 static const uint64_t KiB = 1024;
 static const uint64_t MiB = 1024 * KiB;
 static const uint64_t GiB = 1024 * MiB;
+#ifdef _ARCH_PPC64
 static const uint64_t DB_SIZES[] = {8, 16, 32, 64, 128, 512,
                                     1 * KiB, 4 * KiB, 16 * KiB, 64 * KiB,
                                     1 * MiB, 16 * MiB, 64 * MiB, 256 * MiB,
                                     1 * GiB, 4 * GiB,
                                     8 * GiB, 16 * GiB, 32 * GiB, 64 * GiB,
                                     128 * GiB, 256 * GiB};
+#else
+static const uint64_t DB_SIZES[] = {8, 16, 32, 64, 128, 512,
+                                    1 * KiB, 4 * KiB, 16 * KiB, 64 * KiB,
+                                    1 * MiB, 16 * MiB, 64 * MiB, 256 * MiB,
+                                    1 * GiB, 4 * GiB};
+#endif
 static const int ITERATIONS = 6;
 
 void clear_cache() {
