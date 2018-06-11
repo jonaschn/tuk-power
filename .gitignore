@@ -31,6 +31,13 @@
 *.out
 *.app
 
+# Project files
+.idea/
+
+# Virtual environment
+venv/
+
+# Make
 CMakeCache.txt
 CMakeFiles/
 Makefile
