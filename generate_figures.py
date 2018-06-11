@@ -69,7 +69,7 @@ def process_file(filename):
 
     # print labels in the right order
     handles, labels = plt.gca().get_legend_handles_labels()
-    order = [3, 0, 1, 2]
+    order = [2, 1, 0, 3]
     plt.legend([handles[i] for i in order], [labels[i] for i in order], loc=2, prop={'size': 10})
 
     plt.savefig(filename.replace('.csv', '.png'))
