@@ -23,6 +23,7 @@ else
   THREAD_COUNTS=(8 16)
   SMT_SETTINGS=(1 2)
 fi
+CACHE_SETTINGS=(1 0)
 
 
 
@@ -39,24 +40,26 @@ for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
     fi
   fi  
 
-  for ((i=0; i<$SMT_CONFIGURATIONS; i++)); do
-    NTHREADS="${THREAD_COUNTS[i]}"
-    SMTLVL="${SMT_SETTINGS[i]}"
+  for CACHE_SET in "${CACHE_SETTINGS[@]}"; do
+    for ((i=0; i<$SMT_CONFIGURATIONS; i++)); do
+	  NTHREADS="${THREAD_COUNTS[i]}"
+	  SMTLVL="${SMT_SETTINGS[i]}"
 
 
-    if $IS_POWER; then
-      ppc64_cpu --smt="$SMTLVL"
-    fi
+	  if $IS_POWER; then
+	    ppc64_cpu --smt="$SMTLVL"
+	  fi
 
-    FILENAME=benchmark-prefetch"$PREFETCH_SET"-smt"$SMTLVL"-thread"$NTHREADS"
-    if $IS_POWER; then
-        numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 1  "$NTHREADS" > $FOLDER/$FILENAME-colstore.csv
-        numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 10 "$NTHREADS" > $FOLDER/$FILENAME-rowstore.csv
-    else
-        CPU="${CORE_BINDINGS[i]}"
-        numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark 1  "$NTHREADS" > $FOLDER/$FILENAME-colstore.csv
-        numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark 10 "$NTHREADS" > $FOLDER/$FILENAME-rowstore.csv
-    fi
+	  FILENAME=benchmark-caching"$CACHE_SET"-prefetch"$PREFETCH_SET"-smt"$SMTLVL"-thread"$NTHREADS"
+	  if $IS_POWER; then
+	  	numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 1  "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-colstore.csv
+		numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 10 "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-rowstore.csv
+	  else
+		CPU="${CORE_BINDINGS[i]}"
+		numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark 1  "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-colstore.csv
+		numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark 10 "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-rowstore.csv
+	  fi
+	done
   done
 done
 

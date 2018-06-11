@@ -61,7 +61,7 @@ void thread_func(std::vector<T>& elements, int col_count, uint64_t start_index, 
 }
 
 template <class T>
-std::vector<long long int> benchmark(uint64_t col_size, int col_count, int thread_count) {
+std::vector<long long int> benchmark(uint64_t col_size, int col_count, int thread_count, bool cache) {
     const uint64_t col_length = col_size / sizeof(T);
 
     // Split array into *thread_count* sequential parts
@@ -70,10 +70,19 @@ std::vector<long long int> benchmark(uint64_t col_size, int col_count, int threa
 
     // Average multiple runs
     std::vector<long long int> times;
-    for (int i = 0; i < ITERATIONS; i++) {
+
+    int iterations = ITERATIONS;
+    if (cache) {
+        // first iteration is just for filling the cache
+        iterations++;
+    }
+
+    for (int i = 0; i < iterations; i++) {
         auto attribute_vector = generate_data<T>(col_length * col_count);
         uint64_t start_index = 0;
-        clear_cache();
+        if (!cache) {
+            clear_cache();
+        }
 
         for (int j = 0; j < thread_count; j++) {
             uint64_t end_index = start_index + part_len + (j < overhang ? 1 : 0);
@@ -85,12 +94,15 @@ std::vector<long long int> benchmark(uint64_t col_size, int col_count, int threa
         auto start = std::chrono::high_resolution_clock::now();
         thread_flag = true;
 
-        for (std::thread *thread: threads)
+        for (std::thread *thread: threads) {
             (*thread).join();
+        }
 
         auto end = std::chrono::high_resolution_clock::now();
         auto time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-        times.push_back(time.count());
+        if (!cache || i > 0) {
+            times.push_back(time.count());
+        }
 
         while (!threads.empty()) {
             delete threads.back();
@@ -102,32 +114,42 @@ std::vector<long long int> benchmark(uint64_t col_size, int col_count, int threa
 }
 
 int main(int argc, char* argv[]) {
-    // USAGE: ./benchmark <column count> <thread count>
+    // USAGE: ./benchmark [column count] [thread count] [cache]
+
     // col_count>1 --> row-based layout
     int col_count = 1;
-    if(argc > 1)
+    if (argc > 1) {
         col_count = atoi(argv[1]);
+    }
+
     // threads
     int thread_count = 1;
-    if(argc > 2)
+    if (argc > 2) {
         thread_count = atoi(argv[2]);
+    }
+
+    // cache
+    bool cache = false;
+    if (argc > 3) {
+        cache = atoi(argv[3]);
+    }
 
     std::cout << "Column size in KB,Data type,Time in ns" << std::endl;
     for (auto size: DB_SIZES){
         std::cerr << "benchmarking " << (size / 1024.0f) << std::endl;
-        auto int8_time = benchmark<std::int8_t>(size, col_count, thread_count);
+        auto int8_time = benchmark<std::int8_t>(size, col_count, thread_count, cache);
         for(long long int time: int8_time)
             std::cout << (size / 1024.0f) << ",int8," << time << std::endl;
 
-        auto int16_time = benchmark<std::int16_t>(size, col_count, thread_count);
+        auto int16_time = benchmark<std::int16_t>(size, col_count, thread_count, cache);
         for(long long int time: int16_time)
             std::cout << (size / 1024.0f) << ",int16," << time << std::endl;
 
-        auto int32_time = benchmark<std::int32_t>(size, col_count, thread_count);
+        auto int32_time = benchmark<std::int32_t>(size, col_count, thread_count, cache);
         for(long long int time: int32_time)
             std::cout << (size / 1024.0f) << ",int32," << time << std::endl;
 
-        auto int64_time = benchmark<std::int64_t>(size, col_count, thread_count);
+        auto int64_time = benchmark<std::int64_t>(size, col_count, thread_count, cache);
         for(long long int time: int64_time)
             std::cout << (size / 1024.0f) << ",int64," << time << std::endl;
     }
