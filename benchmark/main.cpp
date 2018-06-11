@@ -8,18 +8,18 @@
 #include <algorithm>
 #include <random>
 
-static const uint64_t KiB = 1024;
-static const uint64_t MiB = 1024 * KiB;
-static const uint64_t GiB = 1024 * MiB;
+static const size_t KiB = 1024;
+static const size_t MiB = 1024 * KiB;
+static const size_t GiB = 1024 * MiB;
 #ifdef _ARCH_PPC64
-static const uint64_t DB_SIZES[] = {8, 16, 32, 64, 128, 512,
+static const size_t DB_SIZES[] = {8, 16, 32, 64, 128, 512,
                                     1 * KiB, 4 * KiB, 16 * KiB, 64 * KiB,
                                     1 * MiB, 16 * MiB, 64 * MiB, 256 * MiB,
                                     1 * GiB, 4 * GiB,
                                     8 * GiB, 16 * GiB, 32 * GiB, 64 * GiB,
                                     128 * GiB, 256 * GiB};
 #else
-static const uint64_t DB_SIZES[] = {8, 16, 32, 64, 128, 512,
+static const size_t DB_SIZES[] = {8, 16, 32, 64, 128, 512,
                                     1 * KiB, 4 * KiB, 16 * KiB, 64 * KiB,
                                     1 * MiB, 16 * MiB, 64 * MiB, 256 * MiB,
                                     1 * GiB, 4 * GiB};
@@ -38,7 +38,7 @@ void clear_cache() {
   clear.resize(500 * 1000 * 1000, 42);
 #endif
 
-  for (uint i = 0; i < clear.size(); i++) {
+  for (size_t i = 0; i < clear.size(); i++) {
     clear[i] += 1;
   }
 
@@ -63,17 +63,17 @@ static std::vector<T> generate_data(size_t size, bool randomInit)
 
 static volatile bool thread_flag = false;
 template <class T>
-void thread_func(std::vector<T>& elements, int col_count, uint64_t start_index, uint64_t end_index){
+void thread_func(std::vector<T>& elements, int col_count, size_t start_index, size_t end_index){
     while(!thread_flag)
         ;
-    for (uint64_t j = start_index;j < end_index; j++){
+    for (size_t j = start_index; j < end_index; j++){
         volatile auto o3_trick = elements[j*col_count + 0]; // read first column
     }
 }
 
 template <class T>
-std::vector<long long int> benchmark(uint64_t col_size, int col_count, int thread_count, bool cache, bool randomInit) {
-    const uint64_t col_length = col_size / sizeof(T);
+std::vector<long long int> benchmark(size_t col_size, int col_count, int thread_count, bool cache, bool randomInit) {
+    const size_t col_length = col_size / sizeof(T);
 
     // Split array into *thread_count* sequential parts
     std::vector<std::thread*> threads;
@@ -90,13 +90,13 @@ std::vector<long long int> benchmark(uint64_t col_size, int col_count, int threa
 
     for (int i = 0; i < iterations; i++) {
         auto attribute_vector = generate_data<T>(col_length * col_count, randomInit);
-        uint64_t start_index = 0;
+        size_t start_index = 0;
         if (!cache) {
             clear_cache();
         }
 
         for (int j = 0; j < thread_count; j++) {
-            uint64_t end_index = start_index + part_len + (j < overhang ? 1 : 0);
+            size_t end_index = start_index + part_len + (j < overhang ? 1 : 0);
             auto thread = new std::thread(thread_func<T>, std::ref(attribute_vector), col_count, start_index,
                                           end_index);
             threads.push_back(thread);
