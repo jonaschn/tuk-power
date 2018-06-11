@@ -46,15 +46,19 @@ void clear_cache() {
 }
 
 template <class T>
-static std::vector<T> generate_data(size_t size)
+static std::vector<T> generate_data(size_t size, bool randomInit)
 {
-    static std::uniform_int_distribution<T> distribution(std::numeric_limits<T>::min(),
-                                                         std::numeric_limits<T>::max());
-    static std::default_random_engine generator;
+    if (randomInit) {
+        static std::uniform_int_distribution<T> distribution(std::numeric_limits<T>::min(),
+                                                             std::numeric_limits<T>::max());
+        static std::default_random_engine generator;
 
-    std::vector<T> data(size);
-    std::generate(data.begin(), data.end(), []() { return distribution(generator); });
-    return data;
+        std::vector<T> data(size);
+        std::generate(data.begin(), data.end(), []() { return distribution(generator); });
+        return data;
+    } else {
+        return std::vector<T>(size, 0);
+    }
 }
 
 static volatile bool thread_flag = false;
@@ -68,7 +72,7 @@ void thread_func(std::vector<T>& elements, int col_count, uint64_t start_index, 
 }
 
 template <class T>
-std::vector<long long int> benchmark(uint64_t col_size, int col_count, int thread_count, bool cache) {
+std::vector<long long int> benchmark(uint64_t col_size, int col_count, int thread_count, bool cache, bool randomInit) {
     const uint64_t col_length = col_size / sizeof(T);
 
     // Split array into *thread_count* sequential parts
@@ -85,7 +89,7 @@ std::vector<long long int> benchmark(uint64_t col_size, int col_count, int threa
     }
 
     for (int i = 0; i < iterations; i++) {
-        auto attribute_vector = generate_data<T>(col_length * col_count);
+        auto attribute_vector = generate_data<T>(col_length * col_count, randomInit);
         uint64_t start_index = 0;
         if (!cache) {
             clear_cache();
@@ -121,7 +125,7 @@ std::vector<long long int> benchmark(uint64_t col_size, int col_count, int threa
 }
 
 int main(int argc, char* argv[]) {
-    // USAGE: ./benchmark [column count] [thread count] [cache]
+    // USAGE: ./benchmark [column count] [thread count] [cache] [random initialization]
 
     // col_count>1 --> row-based layout
     int col_count = 1;
@@ -141,22 +145,28 @@ int main(int argc, char* argv[]) {
         cache = atoi(argv[3]);
     }
 
+    // random initialization instead of 0-initialization
+    bool randomInit = false;
+    if (argc > 4) {
+        randomInit = atoi(argv[4]);
+    }
+
     std::cout << "Column size in KB,Data type,Time in ns" << std::endl;
     for (auto size: DB_SIZES){
         std::cerr << "benchmarking " << (size / 1024.0f) << std::endl;
-        auto int8_time = benchmark<std::int8_t>(size, col_count, thread_count, cache);
+        auto int8_time = benchmark<std::int8_t>(size, col_count, thread_count, cache, randomInit);
         for(long long int time: int8_time)
             std::cout << (size / 1024.0f) << ",int8," << time << std::endl;
 
-        auto int16_time = benchmark<std::int16_t>(size, col_count, thread_count, cache);
+        auto int16_time = benchmark<std::int16_t>(size, col_count, thread_count, cache, randomInit);
         for(long long int time: int16_time)
             std::cout << (size / 1024.0f) << ",int16," << time << std::endl;
 
-        auto int32_time = benchmark<std::int32_t>(size, col_count, thread_count, cache);
+        auto int32_time = benchmark<std::int32_t>(size, col_count, thread_count, cache, randomInit);
         for(long long int time: int32_time)
             std::cout << (size / 1024.0f) << ",int32," << time << std::endl;
 
-        auto int64_time = benchmark<std::int64_t>(size, col_count, thread_count, cache);
+        auto int64_time = benchmark<std::int64_t>(size, col_count, thread_count, cache, randomInit);
         for(long long int time: int64_time)
             std::cout << (size / 1024.0f) << ",int64," << time << std::endl;
     }
