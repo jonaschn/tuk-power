@@ -39,7 +39,7 @@ def process_file(filename):
     plt.legend()
     plt.xlabel('Attribute Vector Size (in KB)')
     plt.xscale('log', basex=2)
-    plt.gca().xaxis.grid(True, lw=.5, ls='--')
+    plt.gca().yaxis.grid(True, lw=.5, ls='--')
     plt.ylabel('Effective Scan Bandwidth (in GB/s)')
 
     if system_type == 'intel':
@@ -50,7 +50,7 @@ def process_file(filename):
     else:
         plt.ylim(ymin=0, ymax=100)
 
-    # show cache sizes of L1, L2 and L3    
+    # show cache sizes of L1, L2 and L3
     if system_type == 'intel':
         cache_sizes_in_kib = {
             'L1': 32,
@@ -65,7 +65,7 @@ def process_file(filename):
         }
     for cache in cache_sizes_in_kib:
         plt.axvline(cache_sizes_in_kib[cache], color='k', alpha=.3)
-        plt.text(cache_sizes_in_kib[cache] * 0.4, plt.ylim()[1], cache, color='k', alpha=.3)    
+        plt.text(cache_sizes_in_kib[cache] * 0.4, plt.ylim()[1], cache, color='k', alpha=.3)
 
     # print labels in the right order
     handles, labels = plt.gca().get_legend_handles_labels()
