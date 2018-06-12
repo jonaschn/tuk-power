@@ -53,23 +53,23 @@ for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
 	  FILENAME=benchmark-caching"$CACHE_SET"-prefetch"$PREFETCH_SET"-smt"$SMTLVL"-thread"$NTHREADS"
 	  if $IS_POWER; then
       perf stat --big-num -e cache-references,cache-misses,L1-dcache-loads,L1-dcache-load-misses,L1-dcache-stores,L1-dcache-store-misses,L1-dcache-prefetches,L1-dcache-prefetch-misses,LLC-loads,LLC-load-misses,LLC-stores,LLC-store-misses,LLC-prefetches,LLC-prefetch-misses,branches,branch-misses,task-clock,context-switches,cpu-migrations,page-faults,cycles,instructions \
-        --log-fd "$FOLDER/$FILENAME-colstore-stats.txt" \
-        numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 1  "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-colstore.csv
-        "$FOLDER/$FILENAME-colstore-stats.txt"
+        --log-fd "$FOLDER/$FILENAME-8bit-stats.txt" \
+        numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark8bit 1  "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-8bit.csv
+        "$FOLDER/$FILENAME-64bit-stats.txt"
       perf stat --big-num -e cache-references,cache-misses,L1-dcache-loads,L1-dcache-load-misses,L1-dcache-stores,L1-dcache-store-misses,L1-dcache-prefetches,L1-dcache-prefetch-misses,LLC-loads,LLC-load-misses,LLC-stores,LLC-store-misses,LLC-prefetches,LLC-prefetch-misses,branches,branch-misses,task-clock,context-switches,cpu-migrations,page-faults,cycles,instructions \
         --log-fd "$FOLDER/$FILENAME-rowstore-stats.txt" \
-        numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 10  "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-rowstore.csv
+        numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark64bit 1  "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-64bit.csv
         "$FOLDER/$FILENAME-rowstore-stats.txt"
     else
 		CPU="${CORE_BINDINGS[i]}"
 		perf stat --big-num -e cache-references,cache-misses,L1-dcache-loads,L1-dcache-load-misses,L1-dcache-stores,L1-dcache-store-misses,L1-dcache-prefetches,L1-dcache-prefetch-misses,LLC-loads,LLC-load-misses,LLC-stores,LLC-store-misses,LLC-prefetches,LLC-prefetch-misses,branches,branch-misses,task-clock,context-switches,cpu-migrations,page-faults,cycles,instructions \
-		    --output "$FOLDER/$FILENAME-colstore-stats.txt" \
-		    numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark 1  "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-colstore.csv
+		    --output "$FOLDER/$FILENAME-8bit-stats.txt" \
+		    numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark8bit 1  "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-8bit.csv
 		    "$FOLDER/$FILENAME-colstore-stats.txt"
 
 		perf stat --big-num -e cache-references,cache-misses,L1-dcache-loads,L1-dcache-load-misses,L1-dcache-stores,L1-dcache-store-misses,L1-dcache-prefetches,L1-dcache-prefetch-misses,LLC-loads,LLC-load-misses,LLC-stores,LLC-store-misses,LLC-prefetches,LLC-prefetch-misses,branches,branch-misses,task-clock,context-switches,cpu-migrations,page-faults,cycles,instructions \
-		    --output "$FOLDER/$FILENAME-rowstore-stats.txt" \
-		    numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark 10 "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-rowstore.csv
+		    --output "$FOLDER/$FILENAME-64bit-stats.txt" \
+		    numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark64bit 1 "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-64bit.csv
 	  fi
 	done
   done
