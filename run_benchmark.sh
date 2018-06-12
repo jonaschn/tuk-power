@@ -53,11 +53,12 @@ for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
 	  FILENAME=benchmark-caching"$CACHE_SET"-prefetch"$PREFETCH_SET"-smt"$SMTLVL"-thread"$NTHREADS"
 	  if $IS_POWER; then
       perf stat --big-num -e cache-references,cache-misses,L1-dcache-loads,L1-dcache-load-misses,L1-dcache-stores,L1-dcache-store-misses,L1-dcache-prefetches,L1-dcache-prefetch-misses,LLC-loads,LLC-load-misses,LLC-stores,LLC-store-misses,LLC-prefetches,LLC-prefetch-misses,branches,branch-misses,task-clock,context-switches,cpu-migrations,page-faults,cycles,instructions \
-        --log-fd "$FOLDER/$FILENAME-colstore-stats.txt" \
+        --output "$FOLDER/$FILENAME-colstore-stats.txt" \
         numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 1  "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-colstore.csv
         "$FOLDER/$FILENAME-colstore-stats.txt"
+        
       perf stat --big-num -e cache-references,cache-misses,L1-dcache-loads,L1-dcache-load-misses,L1-dcache-stores,L1-dcache-store-misses,L1-dcache-prefetches,L1-dcache-prefetch-misses,LLC-loads,LLC-load-misses,LLC-stores,LLC-store-misses,LLC-prefetches,LLC-prefetch-misses,branches,branch-misses,task-clock,context-switches,cpu-migrations,page-faults,cycles,instructions \
-        --log-fd "$FOLDER/$FILENAME-rowstore-stats.txt" \
+        --output "$FOLDER/$FILENAME-rowstore-stats.txt" \
         numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark 10  "$NTHREADS" "$CACHE_SET" > $FOLDER/$FILENAME-rowstore.csv
         "$FOLDER/$FILENAME-rowstore-stats.txt"
     else
