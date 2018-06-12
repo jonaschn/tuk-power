@@ -19,10 +19,7 @@ static const uint64_t DB_SIZES[] = {8, 16, 32, 64, 128, 512,
                                     8 * GiB, 16 * GiB, 32 * GiB, 64 * GiB,
                                     128 * GiB, 256 * GiB};
 #else
-static const uint64_t DB_SIZES[] = {8, 16, 32, 64, 128, 512,
-                                    1 * KiB, 4 * KiB, 16 * KiB, 64 * KiB,
-                                    1 * MiB, 16 * MiB, 64 * MiB, 256 * MiB,
-                                    1 * GiB, 4 * GiB};
+static const uint64_t DB_SIZES[] = {4 * GiB};
 #endif
 static const int ITERATIONS = 6;
 
@@ -48,13 +45,7 @@ void clear_cache() {
 template <class T>
 static std::vector<T> generate_data(size_t size)
 {
-    static std::uniform_int_distribution<T> distribution(std::numeric_limits<T>::min(),
-                                                         std::numeric_limits<T>::max());
-    static std::default_random_engine generator;
-
-    std::vector<T> data(size);
-    std::generate(data.begin(), data.end(), []() { return distribution(generator); });
-    return data;
+    return std::vector<T>(size, 0);
 }
 
 static volatile bool thread_flag = false;
