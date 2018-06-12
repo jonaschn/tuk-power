@@ -39,7 +39,7 @@ def process_file(filename):
     plt.legend()
     plt.xlabel('Attribute Vector Size (in KB)')
     plt.xscale('log', basex=2)
-    plt.gca().xaxis.grid(True, lw=.5, ls='--')
+    plt.gca().yaxis.grid(True, lw=.5, ls='--')
     plt.ylabel('Effective Scan Bandwidth (in GB/s)')
 
     if system_type == 'intel':
