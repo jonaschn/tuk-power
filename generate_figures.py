@@ -9,7 +9,7 @@ import pandas as pd
 tkey = 'Time in ns'
 colszkey = 'Column size in KB'
 dtypekey = 'Data type'
-colors = ['red', 'green', 'blue', 'cyan']
+colors = ['#f6a800', '#af0039', '#dd630d', '#007a9e']
 
 
 def process_file(filename):
