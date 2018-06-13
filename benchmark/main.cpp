@@ -20,8 +20,9 @@ static const size_t DB_SIZES[] = {8, 16, 32, 64, 128, 512,
                                     8 * GiB, 16 * GiB, 32 * GiB, 64 * GiB,
                                     128 * GiB, 256 * GiB};
 #else
-static const size_t DB_SIZES[] = {4 * KiB, 16 * KiB, 64 * KiB,
-                                  1 * MiB, 16 * MiB, 64 * MiB, 256 * MiB,
+static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * KiB, 96 * KiB, 128 * KiB,
+                                  256 * KiB /* L2 cache limit on Intel E7-8890 */, 512 * KiB,
+                                  1 * MiB, 16 * MiB, 32 * MiB, 64 * MiB, 256 * MiB,
                                   1 * GiB, 4 * GiB};
 #endif
 static const int ITERATIONS = 6;
@@ -194,7 +195,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Column size in KB,Data type,Time in ns" << std::endl;
     for (auto size: DB_SIZES){
-        std::cerr << "benchmarking " << (size / 1024.0f) << std::endl;
+        std::cerr << "benchmarking " << (size / 1024.0f) << " KB" << std::endl;
         if (useInt8) {
             auto int8_time = benchmark<std::int8_t>(size, col_count, thread_count, cache, randomInit);
             for (long long int time: int8_time)
