@@ -6,12 +6,9 @@ set(CMAKE_CXX_STANDARD 14)
 add_compile_options(-O3)
 
 add_executable(benchmark main.cpp)
-add_executable(benchmark64bit benchmark64bit.cpp)
-add_executable(benchmark8bit  benchmark8bit.cpp)
 add_executable(prefetching_intel prefetching_intel.cpp)
 
 find_package (Threads)
 target_link_libraries (benchmark      ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries (benchmark64bit ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries (benchmark8bit  ${CMAKE_THREAD_LIBS_INIT})
+
 # target_include_directories(benchmark PRIVATE /opt/ibm/xlC/lib)
