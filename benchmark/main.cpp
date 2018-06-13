@@ -77,7 +77,7 @@ void thread_func(vector<T>& elements, int col_count, size_t start_index, size_t 
 }
 
 template <class T>
-vector<long long int> benchmark(size_t col_size, int col_count, int thread_count, bool cache, bool randomInit) {
+vector<uint64_t> benchmark(size_t col_size, int col_count, int thread_count, bool cache, bool randomInit) {
     const size_t col_length = col_size / sizeof(T);
 
     // Split array into *thread_count* sequential parts
@@ -129,12 +129,17 @@ vector<long long int> benchmark(size_t col_size, int col_count, int thread_count
     return times;
 }
 
+void printResults(vector<uint64_t> times, size_t size, string dataType) {
+    for (auto &time: times) {
+        cout << (size / 1024.0f) << "," << dataType << "," << time << endl;
+    };
+}
+
 int main(int argc, char* argv[]) {
     // USAGE: ./benchmark [column count] [thread count] [cache] [random initialization]
 
-    // col_count>1 --> row-based layout
+    // col_count > 1 --> row-based layout
     int col_count;
-
     int thread_count;
     bool cache;
     bool noCache;
@@ -179,7 +184,7 @@ int main(int argc, char* argv[]) {
     bool useInt32 = true;
     bool useInt64 = true;
 
-    if (dataTypes.length() > 0) {
+    if (!dataTypes.empty()) {
         auto result = parseDataTypes(dataTypes);
         useInt8 = (find(result.begin(), result.end(), "8") != result.end());
         useInt16 = (find(result.begin(), result.end(), "16") != result.end());
@@ -191,27 +196,16 @@ int main(int argc, char* argv[]) {
     for (auto size: DB_SIZES){
         cerr << "benchmarking " << (size / 1024.0f) << endl;
         if (useInt8) {
-            auto int8_time = benchmark<int8_t>(size, col_count, thread_count, cache, randomInit);
-            for (long long int time: int8_time)
-                cout << (size / 1024.0f) << ",int8," << time << endl;
+            printResults(benchmark<int8_t>(size, col_count, thread_count, cache, randomInit), size, "int8");
         }
-
         if (useInt16) {
-            auto int16_time = benchmark<int16_t>(size, col_count, thread_count, cache, randomInit);
-            for (long long int time: int16_time)
-                cout << (size / 1024.0f) << ",int16," << time << endl;
+            printResults(benchmark<int16_t >(size, col_count, thread_count, cache, randomInit), size, "int16");
         }
-
         if (useInt32) {
-            auto int32_time = benchmark<int32_t>(size, col_count, thread_count, cache, randomInit);
-            for (long long int time: int32_time)
-                cout << (size / 1024.0f) << ",int32," << time << endl;
+            printResults(benchmark<int32_t>(size, col_count, thread_count, cache, randomInit), size, "int32");
         }
-
         if (useInt64) {
-            auto int64_time = benchmark<int64_t>(size, col_count, thread_count, cache, randomInit);
-            for (long long int time: int64_time)
-                cout << (size / 1024.0f) << ",int64," << time << endl;
+            printResults(benchmark<int64_t>(size, col_count, thread_count, cache, randomInit), size, "int64");
         }
     }
 
