@@ -40,8 +40,8 @@ void clearCache() {
   clear.resize(500 * 1000 * 1000, 42);
 #endif
 
-  for (size_t i = 0; i < clear.size(); i++) {
-    clear[i] += 1;
+  for (auto entry: clear) {
+    entry++;
   }
 
   clear.resize(0);
