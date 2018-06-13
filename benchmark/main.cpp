@@ -9,6 +9,8 @@
 #include <random>
 #include "flags.h"
 
+using namespace std;
+
 static const size_t KiB = 1024;
 static const size_t MiB = 1024 * KiB;
 static const size_t GiB = 1024 * MiB;
@@ -27,7 +29,7 @@ static const size_t DB_SIZES[] = {4 * KiB, 16 * KiB, 64 * KiB,
 static const int ITERATIONS = 6;
 
 void clear_cache() {
-  std::vector<std::int8_t> clear;
+  vector<int8_t> clear;
 
 #ifdef _ARCH_PPC64
   // maximum cache size for a CPU is:
@@ -46,27 +48,27 @@ void clear_cache() {
 }
 
 template <class T>
-static std::vector<T> generate_data(size_t size, bool randomInit)
+static vector<T> generate_data(size_t size, bool randomInit)
 {
     if (randomInit) {
-        static std::uniform_int_distribution<T> distribution(std::numeric_limits<T>::min(),
-                                                             std::numeric_limits<T>::max());
-        static std::default_random_engine generator;
+        static uniform_int_distribution<T> distribution(numeric_limits<T>::min(),
+                                                             numeric_limits<T>::max());
+        static default_random_engine generator;
 
-        std::vector<T> data(size);
-        std::generate(data.begin(), data.end(), []() { return distribution(generator); });
+        vector<T> data(size);
+        generate(data.begin(), data.end(), []() { return distribution(generator); });
         return data;
     } else {
-        return std::vector<T>(size, 0);
+        return vector<T>(size, 0);
     }
 }
 
 static volatile bool thread_flag = false;
 
-std::vector<std::string> parseDataTypes(const std::string &dataTypes);
+vector<string> parseDataTypes(const string &dataTypes);
 
 template <class T>
-void thread_func(std::vector<T>& elements, int col_count, size_t start_index, size_t end_index){
+void thread_func(vector<T>& elements, int col_count, size_t start_index, size_t end_index){
     while(!thread_flag)
         ;
     for (size_t j = start_index; j < end_index; j++){
@@ -75,15 +77,15 @@ void thread_func(std::vector<T>& elements, int col_count, size_t start_index, si
 }
 
 template <class T>
-std::vector<long long int> benchmark(size_t col_size, int col_count, int thread_count, bool cache, bool randomInit) {
+vector<long long int> benchmark(size_t col_size, int col_count, int thread_count, bool cache, bool randomInit) {
     const size_t col_length = col_size / sizeof(T);
 
     // Split array into *thread_count* sequential parts
-    std::vector<std::thread*> threads;
+    vector<thread*> threads;
     size_t part_len = col_length / thread_count, overhang = col_length % thread_count;
 
     // Average multiple runs
-    std::vector<long long int> times;
+    vector<long long int> times;
 
     int iterations = ITERATIONS;
     if (cache) {
@@ -100,20 +102,20 @@ std::vector<long long int> benchmark(size_t col_size, int col_count, int thread_
 
         for (int j = 0; j < thread_count; j++) {
             size_t end_index = start_index + part_len + (j < overhang ? 1 : 0);
-            auto thread = new std::thread(thread_func<T>, std::ref(attribute_vector), col_count, start_index,
+            auto thread = new thread(thread_func<T>, ref(attribute_vector), col_count, start_index,
                                           end_index);
             threads.push_back(thread);
             start_index = end_index;
         }
-        auto start = std::chrono::high_resolution_clock::now();
+        auto start = chrono::high_resolution_clock::now();
         thread_flag = true;
 
-        for (std::thread *thread: threads) {
+        for (thread *thread: threads) {
             (*thread).join();
         }
 
-        auto end = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+        auto end = chrono::high_resolution_clock::now();
+        auto time = chrono::duration_cast<chrono::nanoseconds>(end - start);
         if (!cache || i > 0) {
             times.push_back(time.count());
         }
@@ -143,13 +145,13 @@ int main(int argc, char* argv[]) {
     if (argc > 4) {
         randomInit = atoi(argv[4]);
     }
-    std::string dataTypes;
+    string dataTypes;
 
     Flags flags;
 
     flags.Var(col_count, 'c', "column-count", 1, "Number of columns to use");
     flags.Var(thread_count, 't', "thread-count", 1, "Number of threads");
-    flags.Var(dataTypes, 'd', "data-types", std::string(""), "comma-separated list of types (e.g. 8 for int8_t)");
+    flags.Var(dataTypes, 'd', "data-types", string(""), "comma-separated list of types (e.g. 8 for int8_t)");
     flags.Bool(cache, 'C', "cache", "Whether to enable the use of caching", "Group 2");
     flags.Bool(noCache, 'N', "nocache", "Whether to disable the use of caching", "Group 2");
     flags.Bool(randomInit, 'r', "random-init", "Initialize randomly", "Group 2");
@@ -179,48 +181,48 @@ int main(int argc, char* argv[]) {
 
     if (dataTypes.length() > 0) {
         auto result = parseDataTypes(dataTypes);
-        useInt8 = (std::find(result.begin(), result.end(), "8") != result.end());
-        useInt16 = (std::find(result.begin(), result.end(), "16") != result.end());
-        useInt32 = (std::find(result.begin(), result.end(), "32") != result.end());
-        useInt64 = (std::find(result.begin(), result.end(), "64") != result.end());
+        useInt8 = (find(result.begin(), result.end(), "8") != result.end());
+        useInt16 = (find(result.begin(), result.end(), "16") != result.end());
+        useInt32 = (find(result.begin(), result.end(), "32") != result.end());
+        useInt64 = (find(result.begin(), result.end(), "64") != result.end());
     }
 
-    std::cout << "Column size in KB,Data type,Time in ns" << std::endl;
+    cout << "Column size in KB,Data type,Time in ns" << endl;
     for (auto size: DB_SIZES){
-        std::cerr << "benchmarking " << (size / 1024.0f) << std::endl;
+        cerr << "benchmarking " << (size / 1024.0f) << endl;
         if (useInt8) {
-            auto int8_time = benchmark<std::int8_t>(size, col_count, thread_count, cache, randomInit);
+            auto int8_time = benchmark<int8_t>(size, col_count, thread_count, cache, randomInit);
             for (long long int time: int8_time)
-                std::cout << (size / 1024.0f) << ",int8," << time << std::endl;
+                cout << (size / 1024.0f) << ",int8," << time << endl;
         }
 
         if (useInt16) {
-            auto int16_time = benchmark<std::int16_t>(size, col_count, thread_count, cache, randomInit);
+            auto int16_time = benchmark<int16_t>(size, col_count, thread_count, cache, randomInit);
             for (long long int time: int16_time)
-                std::cout << (size / 1024.0f) << ",int16," << time << std::endl;
+                cout << (size / 1024.0f) << ",int16," << time << endl;
         }
 
         if (useInt32) {
-            auto int32_time = benchmark<std::int32_t>(size, col_count, thread_count, cache, randomInit);
+            auto int32_time = benchmark<int32_t>(size, col_count, thread_count, cache, randomInit);
             for (long long int time: int32_time)
-                std::cout << (size / 1024.0f) << ",int32," << time << std::endl;
+                cout << (size / 1024.0f) << ",int32," << time << endl;
         }
 
         if (useInt64) {
-            auto int64_time = benchmark<std::int64_t>(size, col_count, thread_count, cache, randomInit);
+            auto int64_time = benchmark<int64_t>(size, col_count, thread_count, cache, randomInit);
             for (long long int time: int64_time)
-                std::cout << (size / 1024.0f) << ",int64," << time << std::endl;
+                cout << (size / 1024.0f) << ",int64," << time << endl;
         }
     }
 
     return 0;
 }
 
-std::vector<std::string> parseDataTypes(const std::string &dataTypes) {
-    std::vector<std::string> result;
-    std::stringstream ss(dataTypes);
+vector<string> parseDataTypes(const string &dataTypes) {
+    vector<string> result;
+    stringstream ss(dataTypes);
     while (ss.good()) {
-        std::string substr;
+        string substr;
         getline(ss, substr, ',');
         result.push_back(substr);
     }
