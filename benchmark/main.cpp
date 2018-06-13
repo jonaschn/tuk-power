@@ -85,7 +85,7 @@ vector<uint64_t> benchmark(size_t col_size, int col_count, int thread_count, boo
     size_t part_len = col_length / thread_count, overhang = col_length % thread_count;
 
     // Average multiple runs
-    vector<long long int> times;
+    vector<uint64_t> times;
 
     int iterations = ITERATIONS;
     if (cache) {
@@ -127,6 +127,17 @@ vector<uint64_t> benchmark(size_t col_size, int col_count, int thread_count, boo
         thread_flag = false;
     }
     return times;
+}
+
+vector<string> parseDataTypes(const string &dataTypes) {
+    vector<string> result;
+    stringstream ss(dataTypes);
+    while (ss.good()) {
+        string substr;
+        getline(ss, substr, ',');
+        result.push_back(substr);
+    }
+    return result;
 }
 
 void printResults(vector<uint64_t> times, size_t size, string dataType) {
@@ -210,15 +221,4 @@ int main(int argc, char* argv[]) {
     }
 
     return 0;
-}
-
-vector<string> parseDataTypes(const string &dataTypes) {
-    vector<string> result;
-    stringstream ss(dataTypes);
-    while (ss.good()) {
-        string substr;
-        getline(ss, substr, ',');
-        result.push_back(substr);
-    }
-    return result;
 }
