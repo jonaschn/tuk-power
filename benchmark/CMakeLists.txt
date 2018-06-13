@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD 14)
 add_compile_options(-O3)
 
 add_executable(benchmark main.cpp)
-add_executable(benchmark64bit benchmark64bit.cpp)
-add_executable(benchmark8bit  benchmark8bit.cpp)
 add_executable(prefetching_intel prefetching_intel.cpp)
 
 find_package (Threads)
