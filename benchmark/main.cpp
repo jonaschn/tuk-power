@@ -28,7 +28,7 @@ static const size_t DB_SIZES[] = {4 * KiB, 16 * KiB, 64 * KiB,
 #endif
 static const int ITERATIONS = 6;
 
-void clear_cache() {
+void clearCache() {
   vector<int8_t> clear;
 
 #ifdef _ARCH_PPC64
@@ -48,11 +48,10 @@ void clear_cache() {
 }
 
 template <class T>
-static vector<T> generate_data(size_t size, bool randomInit)
+static vector<T> generateData(size_t size, bool randomInit)
 {
     if (randomInit) {
-        static uniform_int_distribution<T> distribution(numeric_limits<T>::min(),
-                                                             numeric_limits<T>::max());
+        static uniform_int_distribution<T> distribution(numeric_limits<T>::min(), numeric_limits<T>::max());
         static default_random_engine generator;
 
         vector<T> data(size);
@@ -63,26 +62,26 @@ static vector<T> generate_data(size_t size, bool randomInit)
     }
 }
 
-static volatile bool thread_flag = false;
+static volatile bool threadFlag = false;
 
 vector<string> parseDataTypes(const string &dataTypes);
 
 template <class T>
-void thread_func(vector<T>& elements, int col_count, size_t start_index, size_t end_index){
-    while(!thread_flag)
+void thread_func(vector<T>& elements, int colCount, size_t startIndex, size_t endIndex){
+    while(!threadFlag)
         ;
-    for (size_t j = start_index; j < end_index; j++){
-        volatile auto o3_trick = elements[j*col_count + 0]; // read first column
+    for (size_t j = startIndex; j < endIndex; j++){
+        volatile auto o3Trick = elements[j*colCount + 0]; // read first column
     }
 }
 
 template <class T>
-vector<uint64_t> benchmark(size_t col_size, int col_count, int thread_count, bool cache, bool randomInit) {
-    const size_t col_length = col_size / sizeof(T);
+vector<uint64_t> benchmark(size_t colSize, int colCount, int threadCount, bool cache, bool randomInit) {
+    const size_t colLength = colSize / sizeof(T);
 
-    // Split array into *thread_count* sequential parts
+    // Split array into *threadCount* sequential parts
     vector<thread*> threads;
-    size_t part_len = col_length / thread_count, overhang = col_length % thread_count;
+    size_t partLength = colLength / threadCount, overhang = colLength % threadCount;
 
     // Average multiple runs
     vector<uint64_t> times;
@@ -94,21 +93,21 @@ vector<uint64_t> benchmark(size_t col_size, int col_count, int thread_count, boo
     }
 
     for (int i = 0; i < iterations; i++) {
-        auto attribute_vector = generate_data<T>(col_length * col_count, randomInit);
-        size_t start_index = 0;
+        auto attributeVector = generateData<T>(colLength * colCount, randomInit);
+        size_t startIndex = 0;
         if (!cache) {
-            clear_cache();
+            clearCache();
         }
 
-        for (int j = 0; j < thread_count; j++) {
-            size_t end_index = start_index + part_len + (j < overhang ? 1 : 0);
-            auto thread = new thread(thread_func<T>, ref(attribute_vector), col_count, start_index,
-                                          end_index);
+        for (int j = 0; j < threadCount; j++) {
+            size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
+            auto thread = new thread(thread_func<T>, ref(attributeVector), colCount, startIndex,
+                                          endIndex);
             threads.push_back(thread);
-            start_index = end_index;
+            startIndex = endIndex;
         }
         auto start = chrono::high_resolution_clock::now();
-        thread_flag = true;
+        threadFlag = true;
 
         for (thread *thread: threads) {
             (*thread).join();
@@ -124,7 +123,7 @@ vector<uint64_t> benchmark(size_t col_size, int col_count, int thread_count, boo
             delete threads.back();
             threads.pop_back();
         }
-        thread_flag = false;
+        threadFlag = false;
     }
     return times;
 }
@@ -140,7 +139,7 @@ vector<string> parseDataTypes(const string &dataTypes) {
     return result;
 }
 
-void printResults(vector<uint64_t> times, size_t size, string dataType) {
+void printResults(vector<uint64_t> times, size_t size, const string &dataType) {
     for (auto &time: times) {
         cout << (size / 1024.0f) << "," << dataType << "," << time << endl;
     };
@@ -149,9 +148,9 @@ void printResults(vector<uint64_t> times, size_t size, string dataType) {
 int main(int argc, char* argv[]) {
     // USAGE: ./benchmark [column count] [thread count] [cache] [random initialization]
 
-    // col_count > 1 --> row-based layout
-    int col_count;
-    int thread_count;
+    // colCount > 1 --> row-based layout
+    int colCount;
+    int threadCount;
     bool cache;
     bool noCache;
     bool help;
@@ -165,8 +164,8 @@ int main(int argc, char* argv[]) {
 
     Flags flags;
 
-    flags.Var(col_count, 'c', "column-count", 1, "Number of columns to use");
-    flags.Var(thread_count, 't', "thread-count", 1, "Number of threads");
+    flags.Var(colCount, 'c', "column-count", 1, "Number of columns to use");
+    flags.Var(threadCount, 't', "thread-count", 1, "Number of threads");
     flags.Var(dataTypes, 'd', "data-types", string(""), "comma-separated list of types (e.g. 8 for int8_t)");
     flags.Bool(cache, 'C', "cache", "Whether to enable the use of caching", "Group 2");
     flags.Bool(noCache, 'N', "nocache", "Whether to disable the use of caching", "Group 2");
@@ -207,16 +206,16 @@ int main(int argc, char* argv[]) {
     for (auto size: DB_SIZES){
         cerr << "benchmarking " << (size / 1024.0f) << endl;
         if (useInt8) {
-            printResults(benchmark<int8_t>(size, col_count, thread_count, cache, randomInit), size, "int8");
+            printResults(benchmark<int8_t>(size, colCount, threadCount, cache, randomInit), size, "int8");
         }
         if (useInt16) {
-            printResults(benchmark<int16_t >(size, col_count, thread_count, cache, randomInit), size, "int16");
+            printResults(benchmark<int16_t >(size, colCount, threadCount, cache, randomInit), size, "int16");
         }
         if (useInt32) {
-            printResults(benchmark<int32_t>(size, col_count, thread_count, cache, randomInit), size, "int32");
+            printResults(benchmark<int32_t>(size, colCount, threadCount, cache, randomInit), size, "int32");
         }
         if (useInt64) {
-            printResults(benchmark<int64_t>(size, col_count, thread_count, cache, randomInit), size, "int64");
+            printResults(benchmark<int64_t>(size, colCount, threadCount, cache, randomInit), size, "int64");
         }
     }
 
