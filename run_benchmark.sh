@@ -1,6 +1,11 @@
 #!/bin/bash
 # set -x
 
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run as root (necessary for prefetcher and SMT settings)"
+  exit
+fi
+
 if lscpu | grep -E '^Model name\:\s+POWER'; then
   IS_POWER=true
   FOLDER="power-results"
