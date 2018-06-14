@@ -65,13 +65,19 @@ static volatile bool thread_flag = false;
 
 std::vector<std::string> parseDataTypes(const std::string &dataTypes);
 
+static std::vector<long long int> thread_times;
+
 template <class T>
-void thread_func(std::vector<T>& elements, int col_count, size_t start_index, size_t end_index){
+void thread_func(std::vector<T>& elements, int col_count, size_t start_index, size_t end_index, int thread_id){
     while(!thread_flag)
         ;
+    auto start = std::chrono::high_resolution_clock::now();
     for (size_t j = start_index; j < end_index; j++){
         volatile auto o3_trick = elements[j*col_count + 0]; // read first column
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    thread_times[thread_id] = time.count();
 }
 
 template <class T>
@@ -91,6 +97,7 @@ std::vector<long long int> benchmark(size_t col_size, int col_count, int thread_
         iterations++;
     }
 
+    thread_times = std::vector<long long int>(thread_count);
     for (int i = 0; i < iterations; i++) {
         auto attribute_vector = generate_data<T>(col_length * col_count, randomInit);
         size_t start_index = 0;
@@ -101,22 +108,22 @@ std::vector<long long int> benchmark(size_t col_size, int col_count, int thread_
         for (int j = 0; j < thread_count; j++) {
             size_t end_index = start_index + part_len + (j < overhang ? 1 : 0);
             auto thread = new std::thread(thread_func<T>, std::ref(attribute_vector), col_count, start_index,
-                                          end_index);
+                                          end_index, j);
             threads.push_back(thread);
             start_index = end_index;
         }
-        auto start = std::chrono::high_resolution_clock::now();
         thread_flag = true;
 
         for (std::thread *thread: threads) {
             (*thread).join();
         }
 
-        auto end = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
         if (!cache || i > 0) {
-            times.push_back(time.count());
+            long long int time = std::accumulate(thread_times.begin(), thread_times.end(), 0);
+            times.push_back(time);
         }
+        thread_times.clear();
+        thread_times.resize(thread_count);
 
         while (!threads.empty()) {
             delete threads.back();
