@@ -13,17 +13,20 @@ static const size_t KiB = 1024;
 static const size_t MiB = 1024 * KiB;
 static const size_t GiB = 1024 * MiB;
 #ifdef _ARCH_PPC64
-static const size_t DB_SIZES[] = {8, 16, 32, 64, 128, 512,
-                                    1 * KiB, 4 * KiB, 16 * KiB, 64 * KiB,
-                                    1 * MiB, 16 * MiB, 64 * MiB, 256 * MiB,
-                                    1 * GiB, 4 * GiB,
-                                    8 * GiB, 16 * GiB, 32 * GiB, 64 * GiB,
-                                    128 * GiB, 256 * GiB};
+static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * KiB, 96 * KiB, 128 * KiB,
+                                    256 * KiB, 512 * KiB, 768 * KiB, /* L1 cache limit */
+                                    1 * MiB, 2 * MiB, 4 * MiB, 6 * MiB, /* L2 cache limit */
+                                    16 * MiB, 64 * MiB, 96 * MiB, /* L3 cache limit */
+                                    112 * MiB, 128 * MiB, /* L4 cache limit */
+                                    256 * MiB, 1 * GiB, 4 * GiB,
+                                    /*8 * GiB, 16 * GiB, 32 * GiB, 64 * GiB,
+                                    128 * GiB, 256 * GiB*/
+                                    };
 #else
 static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * KiB, 96 * KiB, 128 * KiB,
-                                  256 * KiB /* L2 cache limit on Intel E7-8890 */, 512 * KiB,
-                                  1 * MiB, 16 * MiB, 32 * MiB, 64 * MiB, 256 * MiB,
-                                  1 * GiB, 4 * GiB};
+                                    256 * KiB /* L2 cache limit on Intel E7-8890 */, 512 * KiB,
+                                    1 * MiB, 16 * MiB, 32 * MiB, 64 * MiB, 256 * MiB,
+                                    1 * GiB, 4 * GiB};
 #endif
 static const int ITERATIONS = 6;
 
@@ -32,11 +35,12 @@ void clear_cache() {
 
 #ifdef _ARCH_PPC64
   // maximum cache size for a CPU is:
-  // 512KB (L2 inclusive) + 96MB L3 + 128MB L4
-  // ==> 224.5 MB ~256MB
-  clear.resize(256 * 1024 * 1024, 42);
+  // 768 KiB L1 + 6 MiB L2 + 96 MiB L3 + 128MiB L4 (off-chip)
+  // ==> 230.75 MiB ~256MiB
+  clear.resize(256 MiB, 42);
 #else
-  clear.resize(500 * 1000 * 1000, 42);
+  // TODO: check if this is necessary because the cache should be smaller for Intel
+  clear.resize(500 MiB, 42);
 #endif
 
   for (size_t i = 0; i < clear.size(); i++) {
