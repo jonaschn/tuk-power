@@ -33,15 +33,11 @@ static const int ITERATIONS = 6;
 void clear_cache() {
   std::vector<std::int8_t> clear;
 
-#ifdef _ARCH_PPC64
-  // maximum cache size for a CPU is:
-  // 768 KiB L1 + 6 MiB L2 + 96 MiB L3 + 128MiB L4 (off-chip)
-  // ==> 230.75 MiB ~256MiB
+  // maximum cache size for a node is:
+  // POWER8: 768 KiB L1 + 6 MiB L2 + 96 MiB L3 + up to 128MiB L4 (off-chip) = 230.75 MiB
+  // Intel E7-8890 v2: 480 KiB L1 + 3.75 MiB L2 + 37.5 MiB L3 = 41.71875 MiB
+  // --> 256MiB is enough to clear all cache levels
   clear.resize(256 MiB, 42);
-#else
-  // TODO: check if this is necessary because the cache should be smaller for Intel
-  clear.resize(500 MiB, 42);
-#endif
 
   for (size_t i = 0; i < clear.size(); i++) {
     clear[i] += 1;
