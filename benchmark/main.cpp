@@ -13,6 +13,7 @@ static const size_t KiB = 1024;
 static const size_t MiB = 1024 * KiB;
 static const size_t GiB = 1024 * MiB;
 #ifdef _ARCH_PPC64
+/* POWER8 */
 static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * KiB, 96 * KiB, 128 * KiB,
                                     256 * KiB, 512 * KiB, 768 * KiB, /* L1 cache limit */
                                     1 * MiB, 2 * MiB, 4 * MiB, 6 * MiB, /* L2 cache limit */
@@ -23,10 +24,12 @@ static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * Ki
                                     128 * GiB, 256 * GiB*/
                                     };
 #else
+/* Intel E7-8890 v2 */
 static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * KiB, 96 * KiB, 128 * KiB,
-                                    256 * KiB /* L2 cache limit on Intel E7-8890 */, 512 * KiB,
-                                    1 * MiB, 16 * MiB, 32 * MiB, 64 * MiB, 256 * MiB,
-                                    1 * GiB, 4 * GiB};
+                                    256 * KiB, 384 * KiB, 480 * KiB, /* L1 cache limit*/
+                                    512 * KiB, 1 * MiB, 2* MiB, 3.75 * MiB, /* L2 cache limit */
+                                    4 * MiB, 8 * MiB, 16 * MiB, 32 * MiB, 37.5 * MiB, /* L3 cache limit */
+                                    64 * MiB, 128 * MiB, 256 * MiB, 1 * GiB, 4 * GiB};
 #endif
 static const int ITERATIONS = 6;
 
