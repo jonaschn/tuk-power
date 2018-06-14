@@ -27,11 +27,13 @@ static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * Ki
 /* Intel E7-8890 v2 */
 static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * KiB, 96 * KiB, 128 * KiB,
                                     256 * KiB, 384 * KiB, 480 * KiB, /* L1 cache limit*/
-                                    512 * KiB, 1 * MiB, 2* MiB, 3.75 * MiB, /* L2 cache limit */
-                                    4 * MiB, 8 * MiB, 16 * MiB, 32 * MiB, 37.5 * MiB, /* L3 cache limit */
+                                    512 * KiB, 1 * MiB, 2* MiB, 3840 * KiB, /* L2 cache limit */
+                                    4 * MiB, 8 * MiB, 16 * MiB, 32 * MiB, 38400 * KiB, /* L3 cache limit */
                                     64 * MiB, 128 * MiB, 256 * MiB, 1 * GiB, 4 * GiB};
 #endif
 static const int ITERATIONS = 6;
+
+std::vector<std::string> parseDataTypes(const std::string &dataTypes);
 
 void clear_cache() {
   std::vector<std::int8_t> clear;
@@ -40,7 +42,7 @@ void clear_cache() {
   // POWER8: 768 KiB L1 + 6 MiB L2 + 96 MiB L3 + up to 128MiB L4 (off-chip) = 230.75 MiB
   // Intel E7-8890 v2: 480 KiB L1 + 3.75 MiB L2 + 37.5 MiB L3 = 41.71875 MiB
   // --> 256MiB is enough to clear all cache levels
-  clear.resize(256 MiB, 42);
+  clear.resize(256 * MiB, 42);
 
   for (size_t i = 0; i < clear.size(); i++) {
     clear[i] += 1;
@@ -66,9 +68,6 @@ static std::vector<T> generate_data(size_t size, bool randomInit)
 }
 
 static volatile bool thread_flag = false;
-
-std::vector<std::string> parseDataTypes(const std::string &dataTypes);
-
 static std::vector<long long int> thread_times;
 
 template <class T>
