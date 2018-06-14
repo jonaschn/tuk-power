@@ -191,7 +191,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Column size in KB,Data type,Time in ns" << std::endl;
     for (auto size: DB_SIZES){
-        std::cerr << "benchmarking " << (size / 1024.0f) << " KB" << std::endl;
+        std::cerr << "benchmarking " << (size / 1024.0f) << " KiB" << std::endl;
         if (useInt8) {
             auto int8_time = benchmark<std::int8_t>(size, col_count, thread_count, cache, randomInit);
             for (long long int time: int8_time)
