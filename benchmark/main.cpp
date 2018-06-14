@@ -32,7 +32,16 @@ static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * Ki
                                     64 * MiB, 128 * MiB, 256 * MiB, 1 * GiB, 4 * GiB};
 #endif
 
-std::vector<std::string> parseDataTypes(const std::string &dataTypes);
+std::vector<std::string> parseDataTypes(const std::string &dataTypes) {
+    std::vector<std::string> result;
+    std::stringstream ss(dataTypes);
+    while (ss.good()) {
+        std::string substr;
+        getline(ss, substr, ',');
+        result.push_back(substr);
+    }
+    return result;
+}
 
 void clear_cache() {
   std::vector<std::int8_t> clear;
@@ -216,15 +225,4 @@ int main(int argc, char* argv[]) {
     }
 
     return 0;
-}
-
-std::vector<std::string> parseDataTypes(const std::string &dataTypes) {
-    std::vector<std::string> result;
-    std::stringstream ss(dataTypes);
-    while (ss.good()) {
-        std::string substr;
-        getline(ss, substr, ',');
-        result.push_back(substr);
-    }
-    return result;
 }
