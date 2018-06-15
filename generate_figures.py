@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 import matplotlib.pyplot as plt
@@ -13,32 +14,40 @@ dtypekey = 'Data type'
 colors = ['#f6a800', '#af0039', '#dd630d', '#007a9e']
 
 
-def process_file(filename, show_variance, only_64):
+def argsort(arr):
+    return sorted(range(len(arr)), key=arr.__getitem__)
+
+
+def natural_order(text):
+    return tuple(int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text))
+
+
+def process_file(filename, show_variance):
     data = pd.read_csv(filename)
     csizes = np.unique(data[colszkey])
-    dtype_dfs = []
 
     fig, ax = plt.subplots()
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 
-    if only_64:
-        dtype_dfs.append(data[data[dtypekey] == "int64"])
-    else:
-        for dtype in np.unique(data[dtypekey]):
-            dtype_dfs.append(data[data[dtypekey] == dtype])
+    dtype_cols = []
+    for column in set(data.columns) - {tkey, colszkey}:
+        if len(np.unique(data[column])) > 1:
+            dtype_cols.append(column)
+    groups = data.groupby(by=dtype_cols)
 
-    for idx, df in enumerate(dtype_dfs):
+    for idx, (group, df) in enumerate(groups):
         bandwidth = df[colszkey] / df[tkey] / 1024 / 1024 * 1e9
         bandwidth_means = [np.mean(bandwidth[df[colszkey] == csz]) for csz in csizes]
         bandwidth_stds = [np.std(bandwidth[df[colszkey] == csz]) for csz in csizes]
 
+        label = '|'.join([str(val) for val in (group if isinstance(group, tuple) else (group,))])
         plt.errorbar(x=csizes,
-             y=bandwidth_means,
-             yerr=bandwidth_stds if show_variance else None,
-             label=df[dtypekey].iloc[0],
-             color=colors[idx], alpha=0.7,
-             ecolor='gray', lw=2, capsize=5, capthick=2)
+                     y=bandwidth_means,
+                     yerr=bandwidth_stds if show_variance else None,
+                     label=label,
+                     color=colors[idx], alpha=0.7,
+                     ecolor='gray', lw=2, capsize=5, capthick=2)
 
     plt.legend()
     plt.xlabel('Attribute Vector Size (in KB)')
@@ -80,11 +89,9 @@ def process_file(filename, show_variance, only_64):
 
     # print labels in the right order
     handles, labels = plt.gca().get_legend_handles_labels()
-    order = [2, 1, 0, 3]
-    if only_64:
-        plt.legend([handles[0]], [labels[0]], loc=2, prop={'size': 10})
-    else:
-        plt.legend([handles[i] for i in order], [labels[i] for i in order], loc=2, prop={'size': 10})
+
+    order = argsort([natural_order(label) for label in labels])
+    plt.legend([handles[i] for i in order], [labels[i] for i in order], loc=2, prop={'size': 10})
 
     caching_enabled = "caching1" in filename
     prefetching_enabled = "prefetch1" in filename
@@ -102,15 +109,14 @@ if __name__ == '__main__':
     system_type = sys.argv[2] if len(sys.argv) > 2 else 'power'
     flags = sys.argv[3:]
     show_variance = 'no-variance' not in flags
-    only_64 = 'only-64' in flags
     try:
         if os.path.isdir(path):
             for filename in os.listdir(path):
                 if filename[-4:] == '.csv':
                     print('Plotting ' + filename + '...')
-                    process_file(os.path.join(path, filename), show_variance, only_64)
+                    process_file(os.path.join(path, filename), show_variance)
         else:
-            process_file(path)
+            process_file(path, show_variance)
         print('Done')
     except FileNotFoundError as e:
         print(e)

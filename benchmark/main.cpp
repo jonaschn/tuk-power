@@ -196,31 +196,34 @@ int main(int argc, char* argv[]) {
         useInt64 = (std::find(result.begin(), result.end(), "64") != result.end());
     }
 
-    std::cout << "Column size in KB,Data type,Time in ns" << std::endl;
+    auto cached_str = cache ? "Cached" : "Uncached";
+    auto thread_count_str = std::to_string(thread_count) + " threads";
+
+    std::cout << "Column size in KB,Data type,Time in ns,Cache,Thread Count" << std::endl;
     for (auto size: DB_SIZES){
         std::cerr << "benchmarking " << (size / 1024.0f) << " KiB" << std::endl;
         if (useInt8) {
             auto int8_time = benchmark<std::int8_t>(size, col_count, thread_count, iterations, cache, randomInit);
             for (long long int time: int8_time)
-                std::cout << (size / 1024.0f) << ",int8," << time << std::endl;
+                std::cout << (size / 1024.0f) << ",int8," << time << "," << cached_str << "," << thread_count_str << std::endl;
         }
 
         if (useInt16) {
             auto int16_time = benchmark<std::int16_t>(size, col_count, thread_count, iterations, cache, randomInit);
             for (long long int time: int16_time)
-                std::cout << (size / 1024.0f) << ",int16," << time << std::endl;
+                std::cout << (size / 1024.0f) << ",int16," << time << "," << cached_str << "," << thread_count_str << std::endl;
         }
 
         if (useInt32) {
             auto int32_time = benchmark<std::int32_t>(size, col_count, thread_count, iterations, cache, randomInit);
             for (long long int time: int32_time)
-                std::cout << (size / 1024.0f) << ",int32," << time << std::endl;
+                std::cout << (size / 1024.0f) << ",int32," << time << "," << cached_str << "," << thread_count_str << std::endl;
         }
 
         if (useInt64) {
             auto int64_time = benchmark<std::int64_t>(size, col_count, thread_count, iterations, cache, randomInit);
             for (long long int time: int64_time)
-                std::cout << (size / 1024.0f) << ",int64," << time << std::endl;
+                std::cout << (size / 1024.0f) << ",int64," << time << "," << cached_str << "," << thread_count_str << std::endl;
         }
     }
 
