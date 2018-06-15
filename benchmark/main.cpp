@@ -129,7 +129,7 @@ std::vector<long long int> benchmark(size_t col_size, int col_count, int thread_
         }
 
         if (!cache || i > 0) {
-            long long int time = std::accumulate(thread_times.begin(), thread_times.end(), 0) / thread_count;
+            long long int time = std::accumulate(thread_times.begin(), thread_times.end(), (long long int) 0) / thread_count;
             times.push_back(time);
         }
         thread_times.clear();
