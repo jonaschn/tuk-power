@@ -9,6 +9,8 @@
 #include <random>
 #include "flags.h"
 
+using namespace std;
+
 static const size_t KiB = 1024;
 static const size_t MiB = 1024 * KiB;
 static const size_t GiB = 1024 * MiB;
@@ -32,19 +34,19 @@ static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * Ki
                                     64 * MiB, 128 * MiB, 256 * MiB, 1 * GiB, 4 * GiB};
 #endif
 
-std::vector<std::string> parseDataTypes(const std::string &dataTypes) {
-    std::vector<std::string> result;
-    std::stringstream ss(dataTypes);
+vector<string> parseDataTypes(const string &dataTypes) {
+    vector<string> result;
+    stringstream ss(dataTypes);
     while (ss.good()) {
-        std::string substr;
+        string substr;
         getline(ss, substr, ',');
         result.push_back(substr);
     }
     return result;
 }
 
-void clear_cache() {
-  std::vector<std::int8_t> clear;
+void clearCache() {
+  vector<int8_t> clear;
 
   // maximum cache size for a node is:
   // POWER8: 768 KiB L1 + 6 MiB L2 + 96 MiB L3 + up to 128MiB L4 (off-chip) = 230.75 MiB
@@ -52,121 +54,128 @@ void clear_cache() {
   // --> 256MiB is enough to clear all cache levels
   clear.resize(256 * MiB, 42);
 
-  for (size_t i = 0; i < clear.size(); i++) {
-    clear[i] += 1;
+  for (auto entry: clear) {
+    entry++;
   }
 
   clear.resize(0);
 }
 
 template <class T>
-static std::vector<T> generate_data(size_t size, bool randomInit)
+static vector<T> generateData(size_t size, bool randomInit)
 {
     if (randomInit) {
-        static std::uniform_int_distribution<T> distribution(std::numeric_limits<T>::min(),
-                                                             std::numeric_limits<T>::max());
-        static std::default_random_engine generator;
+        static uniform_int_distribution<T> distribution(numeric_limits<T>::min(), numeric_limits<T>::max());
+        static default_random_engine generator;
 
-        std::vector<T> data(size);
-        std::generate(data.begin(), data.end(), []() { return distribution(generator); });
+        vector<T> data(size);
+        generate(data.begin(), data.end(), []() { return distribution(generator); });
         return data;
     } else {
-        return std::vector<T>(size, 0);
+        return vector<T>(size, 0);
     }
 }
 
-static volatile bool thread_flag = false;
-static std::vector<long long int> thread_times;
+static volatile bool threadFlag = false;
+
+static vector<long long int> threadTimes;
 
 template <class T>
-void thread_func(std::vector<T>& elements, int col_count, size_t start_index, size_t end_index, int thread_id){
-    while(!thread_flag)
+void threadFunc(vector<T>& elements, int colCount, size_t startIndex, size_t endIndex, int threadId){
+    while (!threadFlag)
         ;
-    auto start = std::chrono::high_resolution_clock::now();
-    for (size_t j = start_index; j < end_index; j++){
-        volatile auto o3_trick = elements[j*col_count + 0]; // read first column
+    auto start = chrono::high_resolution_clock::now();
+    for (size_t j = startIndex; j < endIndex; j++) {
+        volatile auto o3Trick = elements[j*colCount + 0]; // read first column
+        auto end = chrono::high_resolution_clock::now();
     }
-    auto end = std::chrono::high_resolution_clock::now();
-    auto time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    thread_times[thread_id] = time.count();
+    auto end = chrono::high_resolution_clock::now();
+    auto time = chrono::duration_cast<chrono::nanoseconds>(end - start);
+    threadTimes[threadId] = time.count();
 }
 
 template <class T>
-std::vector<long long int> benchmark(size_t col_size, int col_count, int thread_count, int iterations, bool cache, bool randomInit) {
-    const size_t col_length = col_size / sizeof(T);
+void printResults(vector<long long int> times, size_t size, int threadCount, bool cache) {
+    auto dataType = "int" + to_string(sizeof(T) * 8);
+    auto cacheStr = cache ? "Cached" : "Uncached";
+    auto threadCountString = to_string(threadCount) + " threads";
+    for (auto &time: times) {
+        cout << (size / 1024.0f) << "," << dataType << "," << time << "," << cacheStr << "," << threadCountString << endl;
+    };
+}
 
-    // Split array into *thread_count* sequential parts
-    std::vector<std::thread*> threads;
-    size_t part_len = col_length / thread_count, overhang = col_length % thread_count;
+template <class T>
+void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bool cache, bool randomInit) {
+    const size_t colLength = colSize / sizeof(T);
+
+    // Split array into *threadCount* sequential parts
+    vector<thread*> threads;
+    size_t partLength = colLength / threadCount, overhang = colLength % threadCount;
 
     // Average multiple runs
-    std::vector<long long int> times;
+    vector<long long int> times;
 
     if (cache) {
         // first iteration is just for filling the cache
         iterations++;
     }
 
-    thread_times = std::vector<long long int>(thread_count);
+    threadTimes = vector<long long int>(threadCount);
     for (int i = 0; i < iterations; i++) {
-        auto attribute_vector = generate_data<T>(col_length * col_count, randomInit);
-        size_t start_index = 0;
+        auto attributeVector = generateData<T>(colLength * colCount, randomInit);
+        size_t startIndex = 0;
         if (!cache) {
-            clear_cache();
+            clearCache();
         }
 
-        for (int j = 0; j < thread_count; j++) {
-            size_t end_index = start_index + part_len + (j < overhang ? 1 : 0);
-            auto thread = new std::thread(thread_func<T>, std::ref(attribute_vector), col_count, start_index,
-                                          end_index, j);
-            threads.push_back(thread);
-            start_index = end_index;
+        for (int j = 0; j < threadCount; j++) {
+            size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
+            auto threadInstance = new thread(threadFunc<T>, ref(attributeVector), colCount, startIndex,
+                    endIndex, j);
+            threads.push_back(threadInstance);
+            startIndex = endIndex;
         }
-        thread_flag = true;
+        threadFlag = true;
 
-        for (std::thread *thread: threads) {
+        for (thread *thread: threads) {
             (*thread).join();
         }
 
         if (!cache || i > 0) {
-            long long int time = std::accumulate(thread_times.begin(), thread_times.end(), (long long int) 0) / thread_count;
+            long long int time = accumulate(threadTimes.begin(), threadTimes.end(), (long long int) 0) / threadCount;
             times.push_back(time);
         }
-        thread_times.clear();
-        thread_times.resize(thread_count);
+        threadTimes.clear();
+        threadTimes.resize(threadCount);
 
         while (!threads.empty()) {
             delete threads.back();
             threads.pop_back();
         }
-        thread_flag = false;
+        threadFlag = false;
     }
-    return times;
+
+    printResults<T>(times, colSize, threadCount, cache);
 }
 
 int main(int argc, char* argv[]) {
-
-    int col_count; // = 1 --> column-based layout, > 1 --> row-based layout
-    int thread_count;
+    int colCount; // = 1 --> column-based layout, > 1 --> row-based layout
+    int threadCount;
     int iterations;
-
     bool cache;
     bool noCache;
     bool randomInit;
     bool help;
 
-    std::string dataTypes;
-
+    string dataTypes;
     Flags flags;
-
-    flags.Var(col_count, 'c', "column-count", 1, "Number of columns to use");
-    flags.Var(thread_count, 't', "thread-count", 1, "Number of threads");
+    flags.Var(colCount, 'c', "column-count", 1, "Number of columns to use");
+    flags.Var(threadCount, 't', "thread-count", 1, "Number of threads");
     flags.Var(iterations, 'i', "iterations", 6, "Number of iterations");
-    flags.Var(dataTypes, 'd', "data-types", std::string(""), "Comma-separated list of types (e.g. 8 for int8_t)");
+    flags.Var(dataTypes, 'd', "data-types", string(""), "Comma-separated list of types (e.g. 8 for int8_t)");
     flags.Bool(cache, 'C', "cache", "Whether to enable the use of caching", "Choose one of them");
     flags.Bool(noCache, 'N', "nocache", "Whether to disable the use of caching", "Choose one of them");
     flags.Bool(randomInit, 'r', "random-init", "Initialize randomly instead of 0-initialization", "Optional");
-
     flags.Bool(help, 'h', "help", "Show this help and exit", "Help");
 
     if (!flags.Parse(argc, argv)) {
@@ -178,7 +187,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (!(cache ^ noCache)) {
-        std::cout << "Exactly one caching option needs to be selected!\n" << std::endl;
+        cout << "Exactly one caching option needs to be selected!\n" << endl;
         flags.PrintHelp(argv[0]);
         return 1;
     }
@@ -187,43 +196,28 @@ int main(int argc, char* argv[]) {
     bool useInt16 = true;
     bool useInt32 = true;
     bool useInt64 = true;
-
-    if (dataTypes.length() > 0) {
+    if (!dataTypes.empty()) {
         auto result = parseDataTypes(dataTypes);
-        useInt8 = (std::find(result.begin(), result.end(), "8") != result.end());
-        useInt16 = (std::find(result.begin(), result.end(), "16") != result.end());
-        useInt32 = (std::find(result.begin(), result.end(), "32") != result.end());
-        useInt64 = (std::find(result.begin(), result.end(), "64") != result.end());
+        useInt8 = (find(result.begin(), result.end(), "8") != result.end());
+        useInt16 = (find(result.begin(), result.end(), "16") != result.end());
+        useInt32 = (find(result.begin(), result.end(), "32") != result.end());
+        useInt64 = (find(result.begin(), result.end(), "64") != result.end());
     }
 
-    auto cached_str = cache ? "Cached" : "Uncached";
-    auto thread_count_str = std::to_string(thread_count) + " threads";
-
-    std::cout << "Column size in KB,Data type,Time in ns,Cache,Thread Count" << std::endl;
+    cout << "Column size in1 KB,Data type,Time in ns,Cache,Thread Count" << endl;
     for (auto size: DB_SIZES){
-        std::cerr << "benchmarking " << (size / 1024.0f) << " KiB" << std::endl;
+        cerr << "benchmarking " << (size / 1024.0f) << " KiB" << endl;
         if (useInt8) {
-            auto int8_time = benchmark<std::int8_t>(size, col_count, thread_count, iterations, cache, randomInit);
-            for (long long int time: int8_time)
-                std::cout << (size / 1024.0f) << ",int8," << time << "," << cached_str << "," << thread_count_str << std::endl;
+            benchmark<int8_t>(size, colCount, threadCount, iterations, cache, randomInit);
         }
-
         if (useInt16) {
-            auto int16_time = benchmark<std::int16_t>(size, col_count, thread_count, iterations, cache, randomInit);
-            for (long long int time: int16_time)
-                std::cout << (size / 1024.0f) << ",int16," << time << "," << cached_str << "," << thread_count_str << std::endl;
+            benchmark<int16_t>(size, colCount, threadCount, iterations, cache, randomInit);
         }
-
         if (useInt32) {
-            auto int32_time = benchmark<std::int32_t>(size, col_count, thread_count, iterations, cache, randomInit);
-            for (long long int time: int32_time)
-                std::cout << (size / 1024.0f) << ",int32," << time << "," << cached_str << "," << thread_count_str << std::endl;
+            benchmark<int32_t>(size, colCount, threadCount, iterations, cache, randomInit);
         }
-
         if (useInt64) {
-            auto int64_time = benchmark<std::int64_t>(size, col_count, thread_count, iterations, cache, randomInit);
-            for (long long int time: int64_time)
-                std::cout << (size / 1024.0f) << ",int64," << time << "," << cached_str << "," << thread_count_str << std::endl;
+            benchmark<int64_t>(size, colCount, threadCount, iterations, cache, randomInit);
         }
     }
 
