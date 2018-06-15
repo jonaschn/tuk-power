@@ -54,10 +54,10 @@ def process_file(filename, show_variance, only_64):
     plt.ylabel('Effective Scan Bandwidth (in GB/s)')
 
     if system_type == 'intel':
-        if 'caching1' in filename:
-            plt.ylim(ymin=0, ymax=60)
-        else:
+        if 'nocache' in filename:
             plt.ylim(ymin=0, ymax=20)
+        else:
+            plt.ylim(ymin=0, ymax=60)
     else:
         plt.ylim(ymin=0, ymax=100)
 
@@ -87,10 +87,10 @@ def process_file(filename, show_variance, only_64):
     else:
         plt.legend([handles[i] for i in order], [labels[i] for i in order], loc=2, prop={'size': 10})
 
-    caching_enabled = "caching1" in filename
+    nocaching_enabled = "nocache" in filename
     prefetching_enabled = "prefetch1" in filename
     column_store = "colstore" in filename
-    caching_title = "With Caching" if caching_enabled else "No Caching"
+    caching_title = "No Caching" if nocaching_enabled else "With Caching"
     prefetching_title = "With Prefetching" if prefetching_enabled else "No Prefetching"
     store_title = "Column Store" if column_store else "Row Store"
     plt.title("{} - {} - {} - ".format(store_title, caching_title, prefetching_title), y=1.08)
@@ -100,8 +100,11 @@ def process_file(filename, show_variance, only_64):
 
 if __name__ == '__main__':
     path = sys.argv[1] if len(sys.argv) > 1 else 'benchmark.csv'
-    system_type = sys.argv[2] if len(sys.argv) > 2 else 'power'
-    flags = sys.argv[3:]
+    flags = sys.argv[2:]
+    if 'intel' in flags:
+        system_type = 'intel'
+    else:
+        system_type = 'power'
     show_variance = 'no-variance' not in flags
     only_64 = 'only-64' in flags
     try:
