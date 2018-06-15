@@ -66,29 +66,25 @@ for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
         ppc64_cpu --smt="$SMTLVL"
       fi
 
-      FILENAME=benchmark-caching"$CACHE_SET"-prefetch"$PREFETCH_SET"-smt"$SMTLVL"-thread"$NTHREADS"
+      FILENAME=benchmark-"$CACHE_SET"-prefetch"$PREFETCH_SET"-smt"$SMTLVL"-thread"$NTHREADS"
       EVENTS="cache-references,cache-misses,branches,branch-misses,task-clock,context-switches,cpu-migrations,page-faults,cycles,instructions"
       if $IS_POWER; then
-        perf stat --big-num -e "EVENTS" \
+        perf stat --big-num -e "$EVENTS" \
           --output "$FOLDER/$FILENAME-8bit-stats.txt" \
           numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 8 > $FOLDER/$FILENAME-8bit.csv
-          "$FOLDER/$FILENAME-8bit-stats.txt"
 
-        perf stat --big-num -e "EVENTS" \
+        perf stat --big-num -e "$EVENTS" \
           --output "$FOLDER/$FILENAME-64bit-stats.txt" \
           numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 64 > $FOLDER/$FILENAME-64bit.csv
-          "$FOLDER/$FILENAME-64bit-stats.txt"
       else
         CPU="${CORE_BINDINGS[i]}"
-        perf stat --big-num -e "EVENTS" \
+        perf stat --big-num -e "$EVENTS" \
           --output "$FOLDER/$FILENAME-8bit-stats.txt" \
           numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 8 > $FOLDER/$FILENAME-8bit.csv
-          "$FOLDER/$FILENAME-8bit-stats.txt"
 
-        perf stat --big-num -e "EVENTS" \
+        perf stat --big-num -e "$EVENTS" \
           --output "$FOLDER/$FILENAME-64bit-stats.txt" \
           numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 64 > $FOLDER/$FILENAME-64bit.csv
-          "$FOLDER/$FILENAME-64bit-stats.txt"
       fi
     done
   done
