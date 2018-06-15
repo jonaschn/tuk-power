@@ -68,7 +68,7 @@ def process_file(filename, show_variance):
         else:
             plt.ylim(ymin=0, ymax=20)
     else:
-        plt.ylim(ymin=0, ymax=100)
+        plt.ylim(ymin=0, ymax=200)
 
     # show cache sizes of L1, L2 and L3
     if system_type == 'intel':
