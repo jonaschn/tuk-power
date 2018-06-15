@@ -1,4 +1,5 @@
-# tuk-power
+# Hardware optimization benchmarks
+Lecture Trends and Concepts I
 
 ## Build benchmark
 ```
