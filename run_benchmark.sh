@@ -93,6 +93,7 @@ done
 if [ ! $IS_POWER ]; then
   benchmark/prefetching_intel -e  
 else
-  ppc64_cpu --dscr=0 --smt=4 # restore prefetcher and smt settings
+  ppc64_cpu --dscr=0 # restore prefetcher settings
+  ppc64_cpu --smt=4 # restore smt settings
   chmod 666 "$FOLDER"/*
 fi
