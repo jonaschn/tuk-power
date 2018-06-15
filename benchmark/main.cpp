@@ -31,9 +31,17 @@ static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * Ki
                                     4 * MiB, 8 * MiB, 16 * MiB, 32 * MiB, 38400 * KiB, /* L3 cache limit */
                                     64 * MiB, 128 * MiB, 256 * MiB, 1 * GiB, 4 * GiB};
 #endif
-static const int ITERATIONS = 6;
 
-std::vector<std::string> parseDataTypes(const std::string &dataTypes);
+std::vector<std::string> parseDataTypes(const std::string &dataTypes) {
+    std::vector<std::string> result;
+    std::stringstream ss(dataTypes);
+    while (ss.good()) {
+        std::string substr;
+        getline(ss, substr, ',');
+        result.push_back(substr);
+    }
+    return result;
+}
 
 void clear_cache() {
   std::vector<std::int8_t> clear;
@@ -84,7 +92,7 @@ void thread_func(std::vector<T>& elements, int col_count, size_t start_index, si
 }
 
 template <class T>
-std::vector<long long int> benchmark(size_t col_size, int col_count, int thread_count, bool cache, bool randomInit) {
+std::vector<long long int> benchmark(size_t col_size, int col_count, int thread_count, int iterations, bool cache, bool randomInit) {
     const size_t col_length = col_size / sizeof(T);
 
     // Split array into *thread_count* sequential parts
@@ -94,7 +102,6 @@ std::vector<long long int> benchmark(size_t col_size, int col_count, int thread_
     // Average multiple runs
     std::vector<long long int> times;
 
-    int iterations = ITERATIONS;
     if (cache) {
         // first iteration is just for filling the cache
         iterations++;
@@ -138,33 +145,29 @@ std::vector<long long int> benchmark(size_t col_size, int col_count, int thread_
 }
 
 int main(int argc, char* argv[]) {
-    // USAGE: ./benchmark [column count] [thread count] [cache] [random initialization]
 
-    // col_count>1 --> row-based layout
-    int col_count;
-
+    int col_count; // = 1 --> column-based layout, > 1 --> row-based layout
     int thread_count;
+    int iterations;
+
     bool cache;
     bool noCache;
+    bool randomInit;
     bool help;
 
-    // random initialization instead of 0-initialization
-    bool randomInit = false;
-    if (argc > 4) {
-        randomInit = atoi(argv[4]);
-    }
     std::string dataTypes;
 
     Flags flags;
 
     flags.Var(col_count, 'c', "column-count", 1, "Number of columns to use");
     flags.Var(thread_count, 't', "thread-count", 1, "Number of threads");
-    flags.Var(dataTypes, 'd', "data-types", std::string(""), "comma-separated list of types (e.g. 8 for int8_t)");
-    flags.Bool(cache, 'C', "cache", "Whether to enable the use of caching", "Group 2");
-    flags.Bool(noCache, 'N', "nocache", "Whether to disable the use of caching", "Group 2");
-    flags.Bool(randomInit, 'r', "random-init", "Initialize randomly", "Group 2");
+    flags.Var(iterations, 'i', "iterations", 6, "Number of iterations");
+    flags.Var(dataTypes, 'd', "data-types", std::string(""), "Comma-separated list of types (e.g. 8 for int8_t)");
+    flags.Bool(cache, 'C', "cache", "Whether to enable the use of caching", "Choose one of them");
+    flags.Bool(noCache, 'N', "nocache", "Whether to disable the use of caching", "Choose one of them");
+    flags.Bool(randomInit, 'r', "random-init", "Initialize randomly instead of 0-initialization", "Optional");
 
-    flags.Bool(help, 'h', "help", "show this help and exit", "Group 3");
+    flags.Bool(help, 'h', "help", "Show this help and exit", "Help");
 
     if (!flags.Parse(argc, argv)) {
         flags.PrintHelp(argv[0]);
@@ -174,12 +177,10 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    if (noCache) {
-        if (cache) {
-            flags.PrintHelp(argv[0]);
-            return 1;
-        }
-        cache = false;
+    if (!(cache ^ noCache)) {
+        std::cout << "Exactly one caching option needs to be selected!\n" << std::endl;
+        flags.PrintHelp(argv[0]);
+        return 1;
     }
 
     bool useInt8 = true;
@@ -199,40 +200,29 @@ int main(int argc, char* argv[]) {
     for (auto size: DB_SIZES){
         std::cerr << "benchmarking " << (size / 1024.0f) << " KiB" << std::endl;
         if (useInt8) {
-            auto int8_time = benchmark<std::int8_t>(size, col_count, thread_count, cache, randomInit);
+            auto int8_time = benchmark<std::int8_t>(size, col_count, thread_count, iterations, cache, randomInit);
             for (long long int time: int8_time)
                 std::cout << (size / 1024.0f) << ",int8," << time << std::endl;
         }
 
         if (useInt16) {
-            auto int16_time = benchmark<std::int16_t>(size, col_count, thread_count, cache, randomInit);
+            auto int16_time = benchmark<std::int16_t>(size, col_count, thread_count, iterations, cache, randomInit);
             for (long long int time: int16_time)
                 std::cout << (size / 1024.0f) << ",int16," << time << std::endl;
         }
 
         if (useInt32) {
-            auto int32_time = benchmark<std::int32_t>(size, col_count, thread_count, cache, randomInit);
+            auto int32_time = benchmark<std::int32_t>(size, col_count, thread_count, iterations, cache, randomInit);
             for (long long int time: int32_time)
                 std::cout << (size / 1024.0f) << ",int32," << time << std::endl;
         }
 
         if (useInt64) {
-            auto int64_time = benchmark<std::int64_t>(size, col_count, thread_count, cache, randomInit);
+            auto int64_time = benchmark<std::int64_t>(size, col_count, thread_count, iterations, cache, randomInit);
             for (long long int time: int64_time)
                 std::cout << (size / 1024.0f) << ",int64," << time << std::endl;
         }
     }
 
     return 0;
-}
-
-std::vector<std::string> parseDataTypes(const std::string &dataTypes) {
-    std::vector<std::string> result;
-    std::stringstream ss(dataTypes);
-    while (ss.good()) {
-        std::string substr;
-        getline(ss, substr, ',');
-        result.push_back(substr);
-    }
-    return result;
 }
