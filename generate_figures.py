@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker
 import numpy as np
 import pandas as pd
+import argparse
 
+parser = argparse.ArgumentParser(description='Generate plots for the TuK benchmarks')
 
 tkey = 'Time in ns'
 colszkey = 'Column size in KB'
@@ -22,7 +24,7 @@ def natural_order(text):
     return tuple(int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text))
 
 
-def process_file(filename, show_variance):
+def process_file(filename, show_variance, only_64, system_type):
     data = pd.read_csv(filename)
     csizes = np.unique(data[colszkey])
 
@@ -106,19 +108,22 @@ def process_file(filename, show_variance):
 
 
 if __name__ == '__main__':
-    path = sys.argv[1] if len(sys.argv) > 1 else 'benchmark.csv'
-    system_type = sys.argv[2] if len(sys.argv) > 2 else 'power'
-    flags = sys.argv[3:]
-    show_variance = 'no-variance' not in flags
+    parser.add_argument('path', help='directory with files to process or single file')
+    parser.add_argument('system', help='system to plot results for', choices=['intel', 'power'])
+    parser.add_argument('--no-variance', help='hide the variance in plots', action='store_false', dest='variance')
+    parser.add_argument('--only-64', help='whether to plot only results for int64', action='store_true')
+    args = parser.parse_args()
+
+    print(vars(args))
     try:
-        if os.path.isdir(path):
-            for filename in os.listdir(path):
+        if os.path.isdir(args.path):
+            for filename in os.listdir(args.path):
                 if filename[-4:] == '.csv':
                     print('Plotting ' + filename + '...')
-                    process_file(os.path.join(path, filename), show_variance)
+                    filepath = os.path.join(args.path, filename)
+                    process_file(filepath, args.variance, args.only_64, args.system)
         else:
-            process_file(path, show_variance)
+            process_file(args.path, args.variance, args.only_64, args.system)
         print('Done')
     except FileNotFoundError as e:
         print(e)
-        print('Usage: python generate_figures.py path [machine]')
