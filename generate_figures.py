@@ -108,7 +108,7 @@ def process_file(filename, show_variance, only_64, system_type):
 
 if __name__ == '__main__':
     parser.add_argument('path', help='directory with files to process or single file')
-    parser.add_argument('--system', help='system to plot results for', choices=['intel', 'power'], default='intel')
+    parser.add_argument('system', help='system to plot results for', choices=['intel', 'power'])
     parser.add_argument('--no-variance', help='hide the variance in plots', action='store_false', dest='variance')
     parser.add_argument('--only-64', help='whether to plot only results for int64', action='store_true')
     args = parser.parse_args()
