@@ -64,11 +64,20 @@ def process_file(filename, show_variance, only_64, system_type):
     plt.gca().yaxis.grid(True, lw=.5, ls='--')
     plt.ylabel('Effective Scan Bandwidth (in GB/s)')
 
+    nocaching_enabled = "nocache" in filename
+    prefetching_enabled = "prefetch1" in filename
+    column_store = "colstore" in filename
+    caching_title = "No Caching" if nocaching_enabled else "With Caching"
+    prefetching_title = "With Prefetching" if prefetching_enabled else "No Prefetching"
+    store_title = "Column Store" if column_store else "Row Store"
+    plt.title("{} - {} - {} - ".format(store_title, caching_title, prefetching_title), y=1.08)
+
+
     if system_type == 'intel':
-        if 'caching1' in filename:
-            plt.ylim(ymin=0, ymax=60)
-        else:
+        if nocaching_enabled:
             plt.ylim(ymin=0, ymax=20)
+        else:
+            plt.ylim(ymin=0, ymax=60)
     else:
         plt.ylim(ymin=0, ymax=200)
 
@@ -96,13 +105,6 @@ def process_file(filename, show_variance, only_64, system_type):
     order = argsort([natural_order(label) for label in labels])
     plt.legend([handles[i] for i in order], [labels[i] for i in order], loc=2, prop={'size': 10})
 
-    caching_enabled = "caching1" in filename
-    prefetching_enabled = "prefetch1" in filename
-    column_store = "colstore" in filename
-    caching_title = "With Caching" if caching_enabled else "No Caching"
-    prefetching_title = "With Prefetching" if prefetching_enabled else "No Prefetching"
-    store_title = "Column Store" if column_store else "Row Store"
-    plt.title("{} - {} - {} - ".format(store_title, caching_title, prefetching_title), y=1.08)
     plt.savefig(filename.replace('.csv', '.png'))
     plt.clf()
 
