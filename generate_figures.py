@@ -70,19 +70,20 @@ def process_file(filename, show_variance):
     else:
         plt.ylim(ymin=0, ymax=200)
 
+    if system_type == 'intel': # Intel E7-8890 v2 node with 15 cores
+        cache_sizes_in_kib = {
+            'L1': 480, # 15x 32 KiB/core
+            'L2': 3840, # 15x 256 KiB/core
+            'L3': 38400 # 15x 2,5 MiB/core = 37,5 MiB (shared)
+        }
+    else: # POWER 8 node with 12 cores
+        cache_sizes_in_kib = {
+            'L1': 768, # 12x 64 KiB/core
+            'L2': 6144, # 12x 512 KiB/core = 6MiB
+            'L3': 98304 # 12x 8192 KiB/core = 96MiB (shared)
+        }
+
     # show cache sizes of L1, L2 and L3
-    if system_type == 'intel':
-        cache_sizes_in_kib = {
-            'L1': 32,
-            'L2': 256,
-            'L3': 38400
-        }
-    else:
-        cache_sizes_in_kib = {
-            'L1': 64,
-            'L2': 512,
-            'L3': 8192
-        }
     for cache in cache_sizes_in_kib:
         plt.axvline(cache_sizes_in_kib[cache], color='k', alpha=.3)
         plt.text(cache_sizes_in_kib[cache] * 0.4, plt.ylim()[1], cache, color='k', alpha=.3)
