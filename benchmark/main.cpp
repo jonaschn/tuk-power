@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
         useInt64 = (find(result.begin(), result.end(), "64") != result.end());
     }
 
-    cout << "Column size in1 KB,Data type,Time in ns,Cache,Thread Count" << endl;
+    cout << "Column size in KB,Data type,Time in ns,Cache,Thread Count" << endl;
     for (auto size: DB_SIZES){
         cerr << "benchmarking " << (size / 1024.0f) << " KiB" << endl;
         if (useInt8) {
