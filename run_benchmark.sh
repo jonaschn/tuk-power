@@ -90,10 +90,10 @@ for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
   done
 done
 
-if [ ! $IS_POWER ]; then
-  benchmark/prefetching_intel -e  
-else
+if [ "$IS_POWER" = true ]; then
   ppc64_cpu --dscr=0 # restore prefetcher settings
   ppc64_cpu --smt=4 # restore smt settings
   chmod 666 "$FOLDER"/*
+else
+  benchmark/prefetching_intel -e
 fi
