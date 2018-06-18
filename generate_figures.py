@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser(description='Generate plots for the TuK benchma
 tkey = 'Time in ns'
 colszkey = 'Column size in KB'
 dtypekey = 'Data type'
+threads_key = 'Thread Count'
 colors = ['#f6a800', '#af0039', '#dd630d', '#007a9e']
 
 
@@ -36,6 +37,11 @@ def process_file(filename, show_variance, only_64, system_type):
     for column in set(data.columns) - {tkey, colszkey}:
         if len(np.unique(data[column])) > 1:
             dtype_cols.append(column)
+
+    if not dtype_cols:
+        print('Not enough dimensions to group by. Therefore data type was chosen.')
+        dtype_cols.append(dtypekey)
+
     groups = data.groupby(by=dtype_cols)
 
     for idx, (group, df) in enumerate(groups):
@@ -43,8 +49,11 @@ def process_file(filename, show_variance, only_64, system_type):
         bandwidth_means = [np.mean(bandwidth[df[colszkey] == csz]) for csz in csizes]
         bandwidth_stds = [np.std(bandwidth[df[colszkey] == csz]) for csz in csizes]
 
+        number_of_threads = int(df[threads_key][df.index[0]].split(' ')[0]) # max could be used as well
+
         label = '|'.join([str(val) for val in (group if isinstance(group, tuple) else (group,))])
         plt.errorbar(x=csizes,
+                     #y=np.multiply(bandwidth_means, number_of_threads),
                      y=bandwidth_means,
                      yerr=bandwidth_stds if show_variance else None,
                      label=label,
@@ -52,7 +61,7 @@ def process_file(filename, show_variance, only_64, system_type):
                      ecolor='gray', lw=2, capsize=5, capthick=2)
 
     plt.legend()
-    plt.xlabel('Attribute Vector Size (in KB)')
+    plt.xlabel('Attribute Vector Size (in KiB)')
     plt.xscale('log', basex=10)
 
     def comma_seperators(x, pos):
@@ -62,15 +71,15 @@ def process_file(filename, show_variance, only_64, system_type):
     plt.minorticks_off()
     plt.xlim(xmin=8)
     plt.gca().yaxis.grid(True, lw=.5, ls='--')
-    plt.ylabel('Effective Scan Bandwidth (in GB/s)')
+    plt.ylabel('Effective Scan Bandwidth (in GiB/s)')
 
     nocaching_enabled = "nocache" in filename
     prefetching_enabled = "prefetch1" in filename
-    column_store = "colstore" in filename
+    column_store = not "rowstore" in filename
     caching_title = "No Caching" if nocaching_enabled else "With Caching"
     prefetching_title = "With Prefetching" if prefetching_enabled else "No Prefetching"
     store_title = "Column Store" if column_store else "Row Store"
-    plt.title("{} - {} - {} - ".format(store_title, caching_title, prefetching_title), y=1.08)
+    plt.title("{} - {} - {}".format(store_title, caching_title, prefetching_title), y=1.08)
 
 
     if system_type == 'intel':
@@ -79,7 +88,7 @@ def process_file(filename, show_variance, only_64, system_type):
         else:
             plt.ylim(ymin=0, ymax=60)
     else:
-        plt.ylim(ymin=0, ymax=200)
+        plt.ylim(ymin=0, ymax=15)
 
     if system_type == 'intel': # Intel E7-8890 v2 node with 15 cores
         cache_sizes_in_kib = {
@@ -106,7 +115,7 @@ def process_file(filename, show_variance, only_64, system_type):
     plt.legend([handles[i] for i in order], [labels[i] for i in order], loc=2, prop={'size': 10})
 
     plt.savefig(filename.replace('.csv', '.png'))
-    plt.clf()
+    plt.close()
 
 
 if __name__ == '__main__':

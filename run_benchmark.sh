@@ -8,7 +8,7 @@ fi
 
 if lscpu | grep -E '^Model name\:\s+POWER'; then
   IS_POWER=true
-  FOLDER="power-results"
+  FOLDER="power-results-perf"
   SMT_CONFIGURATIONS=4
   SMT_SETTINGS=(1 2 4 8)
   THREAD_COUNTS=(12 24 48 96)
@@ -69,13 +69,18 @@ for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
       FILENAME=benchmark-"$CACHE_SET"-prefetch"$PREFETCH_SET"-smt"$SMTLVL"-thread"$NTHREADS"
       EVENTS="cache-references,cache-misses,branches,branch-misses,task-clock,context-switches,cpu-migrations,page-faults,cycles,instructions"
       if $IS_POWER; then
-        perf stat --big-num -e "$EVENTS" \
-          --output "$FOLDER/$FILENAME-8bit-stats.txt" \
-          numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 8 > $FOLDER/$FILENAME-8bit.csv
 
         perf stat --big-num -e "$EVENTS" \
-          --output "$FOLDER/$FILENAME-64bit-stats.txt" \
-          numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 64 > $FOLDER/$FILENAME-64bit.csv
+        --output "$FOLDER/$FILENAME-8bit-stats.txt" \
+        numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 8 > $FOLDER/$FILENAME-8bit-colstore.csv
+
+        perf stat --big-num -e "$EVENTS" \
+        --output "$FOLDER/$FILENAME-64bit-stats.txt" \
+        numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 64 > $FOLDER/$FILENAME-64bit-colstore.csv
+
+        #numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 8,16,32,64 > $FOLDER/$FILENAME-colstore.csv
+
+        #numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 8,16,32,64 > $FOLDER/$FILENAME-rowstore.csv
       else
         CPU="${CORE_BINDINGS[i]}"
         perf stat --big-num -e "$EVENTS" \
