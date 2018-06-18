@@ -90,7 +90,7 @@ for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
   done
 done
 
-if [ "$IS_POWER" = true ]; then
+if $IS_POWER; then
   ppc64_cpu --dscr=0 # restore prefetcher settings
   ppc64_cpu --smt=4 # restore smt settings
   chmod 666 "$FOLDER"/*
