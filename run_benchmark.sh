@@ -24,10 +24,10 @@ else
   FOLDER="intel-results"
   SMT_CONFIGURATIONS=2
   SMT_SETTINGS=(1 2)
-  THREAD_COUNTS=(8 16)
+  THREAD_COUNTS=(15 30)
   # on the rapa.eaalab machine, these are the NUMA node0 CPUs
-  CORE_BINDINGS=("`seq -s, 0 1 8`"
-                 "`seq -s, 0 1 8`,`seq -s, 120 8 134`")
+  CORE_BINDINGS=("`seq -s, 0 1 14`"
+                 "`seq -s, 0 1 14`,`seq -s, 120 1 134`")
   MEMNODE=0
   PREFETCHER_SETTINGS=(1 0) # 0 means off, 1 means on (no other options available)
 

@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker
 import numpy as np
 import pandas as pd
+import argparse
 
+parser = argparse.ArgumentParser(description='Generate plots for the TuK benchmarks')
 
 tkey = 'Time in ns'
 colszkey = 'Column size in KB'
@@ -22,7 +24,7 @@ def natural_order(text):
     return tuple(int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text))
 
 
-def process_file(filename, show_variance):
+def process_file(filename, show_variance, only_64, system_type):
     data = pd.read_csv(filename)
     csizes = np.unique(data[colszkey])
 
@@ -62,27 +64,37 @@ def process_file(filename, show_variance):
     plt.gca().yaxis.grid(True, lw=.5, ls='--')
     plt.ylabel('Effective Scan Bandwidth (in GB/s)')
 
+    nocaching_enabled = "nocache" in filename
+    prefetching_enabled = "prefetch1" in filename
+    column_store = "colstore" in filename
+    caching_title = "No Caching" if nocaching_enabled else "With Caching"
+    prefetching_title = "With Prefetching" if prefetching_enabled else "No Prefetching"
+    store_title = "Column Store" if column_store else "Row Store"
+    plt.title("{} - {} - {} - ".format(store_title, caching_title, prefetching_title), y=1.08)
+
+
     if system_type == 'intel':
-        if 'caching1' in filename:
-            plt.ylim(ymin=0, ymax=60)
-        else:
+        if nocaching_enabled:
             plt.ylim(ymin=0, ymax=20)
+        else:
+            plt.ylim(ymin=0, ymax=60)
     else:
         plt.ylim(ymin=0, ymax=200)
 
+    if system_type == 'intel': # Intel E7-8890 v2 node with 15 cores
+        cache_sizes_in_kib = {
+            'L1': 480, # 15x 32 KiB/core
+            'L2': 3840, # 15x 256 KiB/core
+            'L3': 38400 # 15x 2,5 MiB/core = 37,5 MiB (shared)
+        }
+    else: # POWER 8 node with 12 cores
+        cache_sizes_in_kib = {
+            'L1': 768, # 12x 64 KiB/core
+            'L2': 6144, # 12x 512 KiB/core = 6MiB
+            'L3': 98304 # 12x 8192 KiB/core = 96MiB (shared)
+        }
+
     # show cache sizes of L1, L2 and L3
-    if system_type == 'intel':
-        cache_sizes_in_kib = {
-            'L1': 32,
-            'L2': 256,
-            'L3': 38400
-        }
-    else:
-        cache_sizes_in_kib = {
-            'L1': 64,
-            'L2': 512,
-            'L3': 8192
-        }
     for cache in cache_sizes_in_kib:
         plt.axvline(cache_sizes_in_kib[cache], color='k', alpha=.3)
         plt.text(cache_sizes_in_kib[cache] * 0.4, plt.ylim()[1], cache, color='k', alpha=.3)
@@ -93,31 +105,27 @@ def process_file(filename, show_variance):
     order = argsort([natural_order(label) for label in labels])
     plt.legend([handles[i] for i in order], [labels[i] for i in order], loc=2, prop={'size': 10})
 
-    caching_enabled = "caching1" in filename
-    prefetching_enabled = "prefetch1" in filename
-    column_store = "colstore" in filename
-    caching_title = "With Caching" if caching_enabled else "No Caching"
-    prefetching_title = "With Prefetching" if prefetching_enabled else "No Prefetching"
-    store_title = "Column Store" if column_store else "Row Store"
-    plt.title("{} - {} - {} - ".format(store_title, caching_title, prefetching_title), y=1.08)
     plt.savefig(filename.replace('.csv', '.png'))
     plt.clf()
 
 
 if __name__ == '__main__':
-    path = sys.argv[1] if len(sys.argv) > 1 else 'benchmark.csv'
-    system_type = sys.argv[2] if len(sys.argv) > 2 else 'power'
-    flags = sys.argv[3:]
-    show_variance = 'no-variance' not in flags
+    parser.add_argument('path', help='directory with files to process or single file')
+    parser.add_argument('system', help='system to plot results for', choices=['intel', 'power'])
+    parser.add_argument('--no-variance', help='hide the variance in plots', action='store_false', dest='variance')
+    parser.add_argument('--only-64', help='whether to plot only results for int64', action='store_true')
+    args = parser.parse_args()
+
+    print(vars(args))
     try:
-        if os.path.isdir(path):
-            for filename in os.listdir(path):
+        if os.path.isdir(args.path):
+            for filename in os.listdir(args.path):
                 if filename[-4:] == '.csv':
                     print('Plotting ' + filename + '...')
-                    process_file(os.path.join(path, filename), show_variance)
+                    filepath = os.path.join(args.path, filename)
+                    process_file(filepath, args.variance, args.only_64, args.system)
         else:
-            process_file(path, show_variance)
+            process_file(args.path, args.variance, args.only_64, args.system)
         print('Done')
     except FileNotFoundError as e:
         print(e)
-        print('Usage: python generate_figures.py path [machine]')
