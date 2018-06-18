@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 
 import matplotlib.pyplot as plt
 from matplotlib import ticker
@@ -83,10 +82,7 @@ def process_file(filename, show_variance, only_64, system_type):
 
 
     if system_type == 'intel':
-        if nocaching_enabled:
-            plt.ylim(ymin=0, ymax=20)
-        else:
-            plt.ylim(ymin=0, ymax=60)
+        plt.ylim(ymin=0, ymax=10)
     else:
         plt.ylim(ymin=0, ymax=15)
 
