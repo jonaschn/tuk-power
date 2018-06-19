@@ -87,7 +87,6 @@ void threadFunc(vector<T>& elements, int colCount, size_t startIndex, size_t end
     auto start = chrono::high_resolution_clock::now();
     for (size_t j = startIndex; j < endIndex; j++) {
         volatile auto o3Trick = elements[j*colCount + 0]; // read first column
-        auto end = chrono::high_resolution_clock::now();
     }
     auto end = chrono::high_resolution_clock::now();
     auto time = chrono::duration_cast<chrono::nanoseconds>(end - start);
