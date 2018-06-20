@@ -86,7 +86,6 @@ template <class T>
 void threadFunc(vector<T>& elements, int colCount, size_t startIndex, size_t endIndex, int threadId, int iterations){
     while (!threadFlag)
         ;
-    vector<long long int> times;
     for (int i = 0; i < iterations; i++) {
         auto start = chrono::high_resolution_clock::now();
         for (size_t j = startIndex; j < endIndex; j++) {
