@@ -78,28 +78,31 @@ static vector<T> generateData(size_t size, bool randomInit)
 
 static volatile bool threadFlag = false;
 
-static vector<long long int> threadTimes;
+static vector<long long int> threadStartTimes;
+static vector<long long int> threadEndTimes;
 
 template <class T>
 void threadFunc(vector<T>& elements, int colCount, size_t startIndex, size_t endIndex, int threadId){
     while (!threadFlag)
         ;
-    auto start = chrono::high_resolution_clock::now();
+    threadStartTimes[threadId] = chrono::high_resolution_clock::now().time_since_epoch().count();
     for (size_t j = startIndex; j < endIndex; j++) {
         volatile auto o3Trick = elements[j*colCount + 0]; // read first column
     }
-    auto end = chrono::high_resolution_clock::now();
-    auto time = chrono::duration_cast<chrono::nanoseconds>(end - start);
-    threadTimes[threadId] = time.count();
+    threadEndTimes[threadId] = chrono::high_resolution_clock::now().time_since_epoch().count();
+    //auto time = chrono::duration_cast<chrono::nanoseconds>(end - start);
+
 }
 
 template <class T>
-void printResults(vector<long long int> times, size_t size, int threadCount, bool cache) {
+void printResults(vector<long long int> startTimes, vector<long long int> endTimes, size_t size, int threadCount,
+                  bool cache) {
     auto dataType = "int" + to_string(sizeof(T) * 8);
     auto cacheStr = cache ? "Cached" : "Uncached";
     auto threadCountString = to_string(threadCount) + " threads";
-    for (auto &time: times) {
-        cout << (size / 1024.0f) << "," << dataType << "," << time << "," << cacheStr << "," << threadCountString << endl;
+    for (int i = 0; i < startTimes.size(); i++) {
+        cout << (size / 1024.0f) << "," << dataType << "," << cacheStr << "," << threadCountString << ","
+             << startTimes[i] << "," << endTimes[i] << endl;
     };
 }
 
@@ -119,7 +122,8 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bo
         iterations++;
     }
 
-    threadTimes = vector<long long int>(threadCount);
+    threadStartTimes = vector<long long int>(threadCount);
+    threadEndTimes = vector<long long int>(threadCount);
     for (int i = 0; i < iterations; i++) {
         auto attributeVector = generateData<T>(colLength * colCount, randomInit);
         size_t startIndex = 0;
@@ -140,12 +144,14 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bo
             (*thread).join();
         }
 
-        if (!cache || i > 0) {
+        /*if (!cache || i > 0) {
             long long int time = accumulate(threadTimes.begin(), threadTimes.end(), (long long int) 0) / threadCount;
             times.push_back(time);
-        }
-        threadTimes.clear();
-        threadTimes.resize(threadCount);
+        }*/
+        threadStartTimes.clear();
+        threadStartTimes.resize(threadCount);
+        threadEndTimes.clear();
+        threadEndTimes.resize(threadCount);
 
         while (!threads.empty()) {
             delete threads.back();
@@ -154,7 +160,7 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bo
         threadFlag = false;
     }
 
-    printResults<T>(times, colSize, threadCount, cache);
+    printResults<T>(threadStartTimes, threadEndTimes, colSize, threadCount, cache);
 }
 
 int main(int argc, char* argv[]) {
@@ -203,7 +209,7 @@ int main(int argc, char* argv[]) {
         useInt64 = (find(result.begin(), result.end(), "64") != result.end());
     }
 
-    cout << "Column size in KB,Data type,Time in ns,Cache,Thread Count" << endl;
+    cout << "Column size in KB,Data type,Cache,Thread Count,Start time epoch,End time epoch" << endl;
     for (auto size: DB_SIZES){
         cerr << "benchmarking " << (size / 1024.0f) << " KiB" << endl;
         if (useInt8) {
