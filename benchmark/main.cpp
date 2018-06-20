@@ -189,7 +189,7 @@ int main(int argc, char* argv[]) {
     Flags flags;
     flags.Var(colCount, 'c', "column-count", 1, "Number of columns to use");
     flags.Var(threadCount, 't', "thread-count", 1, "Number of threads");
-    flags.Var(iterations, 'i', "iterations", -1, "Number of iterations");
+    flags.Var(iterations, 'i', "iterations", 0, "Number of iterations");
     flags.Var(dataTypes, 'd', "data-types", string(""), "Comma-separated list of types (e.g. 8 for int8_t)");
     flags.Bool(cache, 'C', "cache", "Whether to enable the use of caching", "Choose one of them");
     flags.Bool(noCache, 'N', "nocache", "Whether to disable the use of caching", "Choose one of them");
@@ -226,7 +226,8 @@ int main(int argc, char* argv[]) {
     for (auto size: DB_SIZES){
         cerr << "benchmarking " << (size / 1024.0f) << " KiB" << endl;
 
-        int mIterations = iterations == -1 ? max(1, (int) (1 / ITERATIONS_FACTOR / size * 8 * KiB)) : iterations;
+        // For smallest size, iterations will be 1 / factor, e.g. 1/0.01 = 100. For double the size half of that etc.
+        int mIterations = iterations == 0 ? max(1, (int) (1 / ITERATIONS_FACTOR / size * DB_SIZES[0])) : iterations;
 
         if (useInt8) {
             benchmark<int8_t>(size, colCount, threadCount, mIterations, cache, randomInit);
