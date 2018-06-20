@@ -227,7 +227,7 @@ int main(int argc, char* argv[]) {
     for (auto size: DB_SIZES){
         cerr << "benchmarking " << (size / 1024.0f) << " KiB" << endl;
 
-        int mIterations = iterations == -1 ? max(1, (int) (ITERATIONS_FACTOR * size)) : iterations;
+        int mIterations = iterations == -1 ? max(1, (int) (1 / ITERATIONS_FACTOR / size * 8 * KiB)) : iterations;
 
         if (useInt8) {
             benchmark<int8_t>(size, colCount, threadCount, mIterations, cache, randomInit);
