@@ -1,0 +1,18 @@
+# started on Mon Jun 18 23:11:56 2018
+
+
+ Performance counter stats for 'numactl --physcpubind=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134 --membind=0 benchmark/benchmark --column-count 1 --thread-count 30 --cache --data-types 64':
+
+     1.346.057.690      cache-references          #    5,928 M/sec                  
+     1.297.943.739      cache-misses              #   96,426 % of all cache refs    
+   117.999.953.752      branches                  #  519,665 M/sec                  
+         4.621.232      branch-misses             #    0,00% of all branches        
+     227069,459514      task-clock (msec)         #    8,547 CPUs utilized          
+             1.475      context-switches          #    0,006 K/sec                  
+               323      cpu-migrations            #    0,001 K/sec                  
+            58.104      page-faults               #    0,256 K/sec                  
+   729.993.730.845      cycles                    #    3,215 GHz                    
+   492.373.343.833      instructions              #    0,67  insns per cycle        
+
+      26,567250786 seconds time elapsed
+
