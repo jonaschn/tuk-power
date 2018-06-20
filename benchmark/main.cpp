@@ -127,14 +127,20 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bo
             clearCache();
         }
 
-        for (int j = 0; j < threadCount; j++) {
+        for (int j = 0; j < threadCount - 1; j++) {
             size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
             auto threadInstance = new thread(threadFunc<T>, ref(attributeVector), colCount, startIndex,
                     endIndex, j);
             threads.push_back(threadInstance);
             startIndex = endIndex;
         }
+
         threadFlag = true;
+
+        // run threadFunc on main thread
+        int j = threadCount - 1;
+        size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
+        threadFunc<T>(ref(attributeVector), colCount, startIndex, endIndex, threadCount - 1);
 
         for (thread *thread: threads) {
             (*thread).join();
