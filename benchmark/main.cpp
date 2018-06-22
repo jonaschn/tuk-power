@@ -122,36 +122,24 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bo
     // Cache clearing, do one dry run after
     if (!cache) {
         clearCache();
+    }
 
-        size_t startIndex = 0;
-        for (int i = 0; i < threadCount; i++) {
-            size_t endIndex = startIndex + partLength + (i < overhang ? 1 : 0);
-            auto threadInstance = new thread(threadFunc<T>, ref(attributeVector), colCount, startIndex,
-                                             endIndex, i, iterations);
-            threads.push_back(threadInstance);
-            startIndex = endIndex;
-        }
-        threadFlag = true;
-
-        for (thread *thread: threads) {
-            (*thread).join();
-        }
-
-        for (int j = 0; j < threadCount - 1; j++) {
-            size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
-            auto threadInstance = new thread(threadFunc<T>, ref(attributeVector), colCount, startIndex,
-                    endIndex, j);
-            threads.push_back(threadInstance);
-            startIndex = endIndex;
-        }
-
-
-        // run threadFunc on main thread
-        int j = threadCount - 1;
+    size_t startIndex = 0;
+    for (int j = 0; j < threadCount - 1; j++) {
         size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
+        auto threadInstance = new thread(threadFunc<T>, ref(attributeVector), colCount, startIndex,
+                                         endIndex, j, iterations);
+        threads.push_back(threadInstance);
+        startIndex = endIndex;
+    }
 
-        threadFlag = true;
-        threadFunc<T>(ref(attributeVector), colCount, startIndex, endIndex, j, iterations);
+
+    // run threadFunc on main thread
+    int j = threadCount - 1;
+    size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
+
+    threadFlag = true;
+    threadFunc<T>(ref(attributeVector), colCount, startIndex, endIndex, j, iterations);
 
     for (thread *thread: threads) {
         (*thread).join();
