@@ -135,12 +135,13 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bo
             startIndex = endIndex;
         }
 
-        threadFlag = true;
 
         // run threadFunc on main thread
         int j = threadCount - 1;
         size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
-        threadFunc<T>(ref(attributeVector), colCount, startIndex, endIndex, threadCount - 1);
+
+        threadFlag = true;
+        threadFunc<T>(ref(attributeVector), colCount, startIndex, endIndex, j);
 
         for (thread *thread: threads) {
             (*thread).join();
