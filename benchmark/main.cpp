@@ -98,18 +98,17 @@ void threadFunc(vector<T>& elements, int colCount, size_t startIndex, size_t end
 }
 
 template <class T>
-void printResults(vector<long long int> times, size_t size, int threadCount, bool cache, int colCount) {
+void printResults(vector<long long int> times, size_t size, int threadCount, int colCount) {
     auto dataType = "int" + to_string(sizeof(T) * 8);
-    auto cacheStr = cache ? "Cached" : "Uncached";
     auto threadCountStr = to_string(threadCount) + " threads";
     auto rowStoreStr = colCount > 1 ? "Row store" : "Column store";
     for (auto &time: times) {
-        cout << (size / 1024.0f) << "," << dataType << "," << time << "," << cacheStr << "," << threadCountStr << "," << rowStoreStr << endl;
+        cout << (size / 1024.0f) << "," << dataType << "," << time << "," << threadCountStr << "," << rowStoreStr << endl;
     };
 }
 
 template <class T>
-void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bool cache, bool randomInit) {
+void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bool randomInit) {
     const size_t colLength = colSize / sizeof(T);
 
     // Split array into *threadCount* sequential parts
@@ -118,11 +117,6 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bo
 
     auto attributeVector = generateData<T>(colLength * colCount, randomInit);
     threadTimes.resize(threadCount*iterations);
-
-    // Cache clearing, do one dry run after
-    if (!cache) {
-        clearCache();
-    }
 
     size_t startIndex = 0;
     for (int j = 0; j < threadCount - 1; j++) {
@@ -139,7 +133,7 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bo
     size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
 
     threadFlag = true;
-    threadFunc<T>(ref(attributeVector), colCount, startIndex, endIndex, j, iterations);
+    threadFunc<T>(attributeVector, colCount, startIndex, endIndex, j, iterations);
 
     for (thread *thread: threads) {
         (*thread).join();
@@ -160,15 +154,13 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bo
         times.push_back(time / threadCount);
     }
 
-    printResults<T>(times, colSize, threadCount, cache, colCount);
+    printResults<T>(times, colSize, threadCount, colCount);
 }
 
 int main(int argc, char* argv[]) {
     int colCount; // = 1 --> column-based layout, > 1 --> row-based layout
     int threadCount;
     int iterations;
-    bool cache;
-    bool noCache;
     bool randomInit;
     bool help;
 
@@ -178,8 +170,6 @@ int main(int argc, char* argv[]) {
     flags.Var(threadCount, 't', "thread-count", 1, "Number of threads");
     flags.Var(iterations, 'i', "iterations", 0, "Number of iterations");
     flags.Var(dataTypes, 'd', "data-types", string(""), "Comma-separated list of types (e.g. 8 for int8_t)");
-    flags.Bool(cache, 'C', "cache", "Whether to enable the use of caching", "Choose one of them");
-    flags.Bool(noCache, 'N', "nocache", "Whether to disable the use of caching", "Choose one of them");
     flags.Bool(randomInit, 'r', "random-init", "Initialize randomly instead of 0-initialization", "Optional");
     flags.Bool(help, 'h', "help", "Show this help and exit", "Help");
 
@@ -189,12 +179,6 @@ int main(int argc, char* argv[]) {
     } else if (help) {
         flags.PrintHelp(argv[0]);
         return 0;
-    }
-
-    if (!(cache ^ noCache)) {
-        cout << "Exactly one caching option needs to be selected!\n" << endl;
-        flags.PrintHelp(argv[0]);
-        return 1;
     }
 
     bool useInt8 = true;
@@ -209,24 +193,24 @@ int main(int argc, char* argv[]) {
         useInt64 = (find(result.begin(), result.end(), "64") != result.end());
     }
 
-    cout << "Column size in KB,Data type,Time in ns,Cache,Thread Count,DB type" << endl;
+    cout << "Column size in KB,Data type,Time in ns,Thread Count,DB type" << endl;
     for (auto size: DB_SIZES){
         cerr << "benchmarking " << (size / 1024.0f) << " KiB" << endl;
 
-        // For smallest size, iterations will be 1 / factor, e.g. 1/0.01 = 100. For double the size half of that etc.
-        int mIterations = iterations == 0 ? max(1, (int) (1 / ITERATIONS_FACTOR / size * DB_SIZES[0])) : iterations;
+        // For smallest size, iterations will be ITERATIONS_FACTOR. For double the size half of that etc. (but at least 6)
+        int dynamicIterations = iterations == 0 ? max(6, (int) (ITERATIONS_FACTOR / size * DB_SIZES[0])) : iterations;
 
         if (useInt8) {
-            benchmark<int8_t>(size, colCount, threadCount, mIterations, cache, randomInit);
+            benchmark<int8_t>(size, colCount, threadCount, dynamicIterations, randomInit);
         }
         if (useInt16) {
-            benchmark<int16_t>(size, colCount, threadCount, mIterations, cache, randomInit);
+            benchmark<int16_t>(size, colCount, threadCount, dynamicIterations, randomInit);
         }
         if (useInt32) {
-            benchmark<int32_t>(size, colCount, threadCount, mIterations, cache, randomInit);
+            benchmark<int32_t>(size, colCount, threadCount, dynamicIterations, randomInit);
         }
         if (useInt64) {
-            benchmark<int64_t>(size, colCount, threadCount, mIterations, cache, randomInit);
+            benchmark<int64_t>(size, colCount, threadCount, dynamicIterations, randomInit);
         }
     }
 
