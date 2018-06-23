@@ -148,7 +148,8 @@ done
 if $IS_POWER; then
   ppc64_cpu --dscr=0 # restore prefetcher settings
   ppc64_cpu --smt=4 # restore smt settings
-  chmod 666 "$FOLDER"/*
+  chmod 666 -R "$FOLDER"/ # necessary for files
+  chmod +X -R "$FOLDER"/ # necessary for directories
 else
   benchmark/prefetching_intel -e
 fi
