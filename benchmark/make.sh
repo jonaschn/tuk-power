@@ -1,0 +1,3 @@
+cmake CMakeLists.txt
+make
+
