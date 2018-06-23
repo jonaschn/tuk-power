@@ -32,7 +32,6 @@ else
   PREFETCHER_SETTINGS=(1 0) # 0 means off, 1 means on (no other options available)
 
 fi
-CACHE_SETTINGS=('cache' 'nocache')
 
 
 
@@ -56,42 +55,40 @@ for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
     fi
   fi  
 
-  for CACHE_SET in "${CACHE_SETTINGS[@]}"; do
-    for ((i=0; i<$SMT_CONFIGURATIONS; i++)); do
-      NTHREADS="${THREAD_COUNTS[i]}"
-      SMTLVL="${SMT_SETTINGS[i]}"
+  for ((i=0; i<$SMT_CONFIGURATIONS; i++)); do
+    NTHREADS="${THREAD_COUNTS[i]}"
+    SMTLVL="${SMT_SETTINGS[i]}"
 
 
-      if $IS_POWER; then
-        ppc64_cpu --smt="$SMTLVL"
-      fi
+    if $IS_POWER; then
+      ppc64_cpu --smt="$SMTLVL"
+    fi
 
-      FILENAME=benchmark-"$CACHE_SET"-prefetch"$PREFETCH_SET"-smt"$SMTLVL"-thread"$NTHREADS"
-      EVENTS="cache-references,cache-misses,branches,branch-misses,task-clock,context-switches,cpu-migrations,page-faults,cycles,instructions"
-      if $IS_POWER; then
+    FILENAME=benchmark-prefetch"$PREFETCH_SET"-smt"$SMTLVL"-thread"$NTHREADS"
+    EVENTS="cache-references,cache-misses,branches,branch-misses,task-clock,context-switches,cpu-migrations,page-faults,cycles,instructions"
+    if $IS_POWER; then
 
-        perf stat --big-num -e "$EVENTS" \
+      perf stat --big-num -e "$EVENTS" \
+      --output "$FOLDER/$FILENAME-8bit-stats.txt" \
+      numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --data-types 8 > $FOLDER/$FILENAME-8bit-colstore.csv
+
+      perf stat --big-num -e "$EVENTS" \
+      --output "$FOLDER/$FILENAME-64bit-stats.txt" \
+      numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --data-types 64 > $FOLDER/$FILENAME-64bit-colstore.csv
+
+      #numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --data-types 8,16,32,64 > $FOLDER/$FILENAME-colstore.csv
+
+      #numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$NTHREADS" --data-types 8,16,32,64 > $FOLDER/$FILENAME-rowstore.csv
+    else
+      CPU="${CORE_BINDINGS[i]}"
+      perf stat --big-num -e "$EVENTS" \
         --output "$FOLDER/$FILENAME-8bit-stats.txt" \
-        numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 8 > $FOLDER/$FILENAME-8bit-colstore.csv
+        numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --data-types 8 > $FOLDER/$FILENAME-8bit.csv
 
-        perf stat --big-num -e "$EVENTS" \
+      perf stat --big-num -e "$EVENTS" \
         --output "$FOLDER/$FILENAME-64bit-stats.txt" \
-        numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 64 > $FOLDER/$FILENAME-64bit-colstore.csv
-
-        #numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 8,16,32,64 > $FOLDER/$FILENAME-colstore.csv
-
-        #numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 8,16,32,64 > $FOLDER/$FILENAME-rowstore.csv
-      else
-        CPU="${CORE_BINDINGS[i]}"
-        perf stat --big-num -e "$EVENTS" \
-          --output "$FOLDER/$FILENAME-8bit-stats.txt" \
-          numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 8 > $FOLDER/$FILENAME-8bit.csv
-
-        perf stat --big-num -e "$EVENTS" \
-          --output "$FOLDER/$FILENAME-64bit-stats.txt" \
-          numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --"$CACHE_SET" --data-types 64 > $FOLDER/$FILENAME-64bit.csv
-      fi
-    done
+        numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$NTHREADS" --data-types 64 > $FOLDER/$FILENAME-64bit.csv
+    fi
   done
 done
 

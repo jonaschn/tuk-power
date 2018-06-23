@@ -34,6 +34,8 @@ static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * Ki
                                     64 * MiB, 128 * MiB, 256 * MiB, 1 * GiB, 4 * GiB};
 #endif
 
+static const float ITERATIONS_FACTOR = 100f;
+
 vector<string> parseDataTypes(const string &dataTypes) {
     vector<string> result;
     stringstream ss(dataTypes);
@@ -81,95 +83,84 @@ static volatile bool threadFlag = false;
 static vector<long long int> threadTimes;
 
 template <class T>
-void threadFunc(vector<T>& elements, int colCount, size_t startIndex, size_t endIndex, int threadId){
+void threadFunc(vector<T>& elements, int colCount, size_t startIndex, size_t endIndex, int threadId, int iterations){
     while (!threadFlag)
         ;
-    auto start = chrono::high_resolution_clock::now();
-    for (size_t j = startIndex; j < endIndex; j++) {
-        volatile auto o3Trick = elements[j*colCount + 0]; // read first column
+    for (int i = 0; i < iterations; i++) {
+        auto start = chrono::high_resolution_clock::now();
+        for (size_t j = startIndex; j < endIndex; j++) {
+            volatile auto o3Trick = elements[j*colCount + 0]; // read first column
+        }
+        auto end = chrono::high_resolution_clock::now();
+        auto time = chrono::duration_cast<chrono::nanoseconds>(end - start);
+        threadTimes[threadId*iterations + i] = time.count();
     }
-    auto end = chrono::high_resolution_clock::now();
-    auto time = chrono::duration_cast<chrono::nanoseconds>(end - start);
-    threadTimes[threadId] = time.count();
 }
 
 template <class T>
-void printResults(vector<long long int> times, size_t size, int threadCount, bool cache) {
+void printResults(vector<long long int> times, size_t size, int threadCount, int colCount) {
     auto dataType = "int" + to_string(sizeof(T) * 8);
-    auto cacheStr = cache ? "Cached" : "Uncached";
-    auto threadCountString = to_string(threadCount) + " threads";
+    auto threadCountStr = to_string(threadCount) + " threads";
+    auto rowStoreStr = colCount > 1 ? "Row store" : "Column store";
     for (auto &time: times) {
-        cout << (size / 1024.0f) << "," << dataType << "," << time << "," << cacheStr << "," << threadCountString << endl;
+        cout << (size / 1024.0f) << "," << dataType << "," << time << "," << threadCountStr << "," << rowStoreStr << endl;
     };
 }
 
 template <class T>
-void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bool cache, bool randomInit) {
+void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bool randomInit) {
     const size_t colLength = colSize / sizeof(T);
 
     // Split array into *threadCount* sequential parts
     vector<thread*> threads;
     size_t partLength = colLength / threadCount, overhang = colLength % threadCount;
 
-    // Average multiple runs
-    vector<long long int> times;
+    auto attributeVector = generateData<T>(colLength * colCount, randomInit);
+    threadTimes.resize(threadCount*iterations);
 
-    if (cache) {
-        // first iteration is just for filling the cache
-        iterations++;
-    }
-
-    threadTimes = vector<long long int>(threadCount);
-    for (int i = 0; i < iterations; i++) {
-        auto attributeVector = generateData<T>(colLength * colCount, randomInit);
-        size_t startIndex = 0;
-        if (!cache) {
-            clearCache();
-        }
-
-        for (int j = 0; j < threadCount - 1; j++) {
-            size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
-            auto threadInstance = new thread(threadFunc<T>, ref(attributeVector), colCount, startIndex,
-                    endIndex, j);
-            threads.push_back(threadInstance);
-            startIndex = endIndex;
-        }
-
-
-        // run threadFunc on main thread
-        int j = threadCount - 1;
+    size_t startIndex = 0;
+    for (int j = 0; j < threadCount - 1; j++) {
         size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
-
-        threadFlag = true;
-        threadFunc<T>(ref(attributeVector), colCount, startIndex, endIndex, j);
-
-        for (thread *thread: threads) {
-            (*thread).join();
-        }
-
-        if (!cache || i > 0) {
-            long long int time = accumulate(threadTimes.begin(), threadTimes.end(), (long long int) 0) / threadCount;
-            times.push_back(time);
-        }
-        threadTimes.clear();
-        threadTimes.resize(threadCount);
-
-        while (!threads.empty()) {
-            delete threads.back();
-            threads.pop_back();
-        }
-        threadFlag = false;
+        auto threadInstance = new thread(threadFunc<T>, ref(attributeVector), colCount, startIndex,
+                                         endIndex, j, iterations);
+        threads.push_back(threadInstance);
+        startIndex = endIndex;
     }
 
-    printResults<T>(times, colSize, threadCount, cache);
+
+    // run threadFunc on main thread
+    int j = threadCount - 1;
+    size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
+
+    threadFlag = true;
+    threadFunc<T>(attributeVector, colCount, startIndex, endIndex, j, iterations);
+
+    for (thread *thread: threads) {
+        (*thread).join();
+    }
+
+    while (!threads.empty()) {
+        delete threads.back();
+        threads.pop_back();
+    }
+    threadFlag = false;
+
+    // Average per run
+    vector<long long int> times;
+    for(int i=0; i < iterations; i++) {
+        long long int time = 0;
+        for(int j=0; j<threadCount; j++)
+            time += threadTimes[j*iterations + i];
+        times.push_back(time / threadCount);
+    }
+
+    printResults<T>(times, colSize, threadCount, colCount);
 }
 
 int main(int argc, char* argv[]) {
     int colCount; // = 1 --> column-based layout, > 1 --> row-based layout
     int threadCount;
     int iterations;
-    bool cache;
-    bool noCache;
     bool randomInit;
     bool help;
 
@@ -177,10 +168,8 @@ int main(int argc, char* argv[]) {
     Flags flags;
     flags.Var(colCount, 'c', "column-count", 1, "Number of columns to use");
     flags.Var(threadCount, 't', "thread-count", 1, "Number of threads");
-    flags.Var(iterations, 'i', "iterations", 6, "Number of iterations");
+    flags.Var(iterations, 'i', "iterations", 0, "Number of iterations");
     flags.Var(dataTypes, 'd', "data-types", string(""), "Comma-separated list of types (e.g. 8 for int8_t)");
-    flags.Bool(cache, 'C', "cache", "Whether to enable the use of caching", "Choose one of them");
-    flags.Bool(noCache, 'N', "nocache", "Whether to disable the use of caching", "Choose one of them");
     flags.Bool(randomInit, 'r', "random-init", "Initialize randomly instead of 0-initialization", "Optional");
     flags.Bool(help, 'h', "help", "Show this help and exit", "Help");
 
@@ -190,12 +179,6 @@ int main(int argc, char* argv[]) {
     } else if (help) {
         flags.PrintHelp(argv[0]);
         return 0;
-    }
-
-    if (!(cache ^ noCache)) {
-        cout << "Exactly one caching option needs to be selected!\n" << endl;
-        flags.PrintHelp(argv[0]);
-        return 1;
     }
 
     bool useInt8 = true;
@@ -210,20 +193,24 @@ int main(int argc, char* argv[]) {
         useInt64 = (find(result.begin(), result.end(), "64") != result.end());
     }
 
-    cout << "Column size in KB,Data type,Time in ns,Cache,Thread Count" << endl;
+    cout << "Column size in KB,Data type,Time in ns,Thread Count,DB type" << endl;
     for (auto size: DB_SIZES){
         cerr << "benchmarking " << (size / 1024.0f) << " KiB" << endl;
+
+        // For smallest size, iterations will be ITERATIONS_FACTOR. For double the size half of that etc. (but at least 6)
+        int dynamicIterations = iterations == 0 ? max(6, (int) (ITERATIONS_FACTOR / size * DB_SIZES[0])) : iterations;
+
         if (useInt8) {
-            benchmark<int8_t>(size, colCount, threadCount, iterations, cache, randomInit);
+            benchmark<int8_t>(size, colCount, threadCount, dynamicIterations, randomInit);
         }
         if (useInt16) {
-            benchmark<int16_t>(size, colCount, threadCount, iterations, cache, randomInit);
+            benchmark<int16_t>(size, colCount, threadCount, dynamicIterations, randomInit);
         }
         if (useInt32) {
-            benchmark<int32_t>(size, colCount, threadCount, iterations, cache, randomInit);
+            benchmark<int32_t>(size, colCount, threadCount, dynamicIterations, randomInit);
         }
         if (useInt64) {
-            benchmark<int64_t>(size, colCount, threadCount, iterations, cache, randomInit);
+            benchmark<int64_t>(size, colCount, threadCount, dynamicIterations, randomInit);
         }
     }
 
