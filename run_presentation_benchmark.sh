@@ -8,7 +8,7 @@ fi
 
 if lscpu | grep -E '^Model name\:\s+POWER'; then
   IS_POWER=true
-  FOLDER="power-results-presentation"
+  FOLDER="power-results"
   SMT_CONFIGURATIONS=4
   SMT_SETTINGS=(1 2 4 8)
   THREAD_COUNTS=(12 24 48 96)
@@ -21,7 +21,7 @@ if lscpu | grep -E '^Model name\:\s+POWER'; then
   PREFETCHER_SETTINGS=(1 0)
 else
   IS_POWER=false
-  FOLDER="intel-results-presentation"
+  FOLDER="intel-results"
   SMT_CONFIGURATIONS=2
   SMT_SETTINGS=(1 2)
   THREAD_COUNTS=(15 30)
