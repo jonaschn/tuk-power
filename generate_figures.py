@@ -82,7 +82,7 @@ def process_file(filename, show_variance, only_64, system_type):
 
 
     if system_type == 'intel':
-        plt.ylim(ymin=0, ymax=10)
+        plt.ylim(ymin=0, ymax=250)
     else:
         plt.ylim(ymin=0, ymax=15)
 
