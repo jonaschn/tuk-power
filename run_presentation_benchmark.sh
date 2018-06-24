@@ -8,7 +8,7 @@ fi
 
 if lscpu | grep -E '^Model name\:\s+POWER'; then
   IS_POWER=true
-  FOLDER="power-results-presentation"
+  FOLDER="power-results"
   SMT_CONFIGURATIONS=4
   SMT_SETTINGS=(1 2 4 8)
   THREAD_COUNTS=(12 24 48 96)
@@ -21,7 +21,7 @@ if lscpu | grep -E '^Model name\:\s+POWER'; then
   PREFETCHER_SETTINGS=(1 0)
 else
   IS_POWER=false
-  FOLDER="intel-results-presentation"
+  FOLDER="intel-results"
   SMT_CONFIGURATIONS=2
   SMT_SETTINGS=(1 2)
   THREAD_COUNTS=(15 30)
@@ -36,23 +36,23 @@ fi
 SINGLE_THREAD_COUNT="${THREAD_COUNTS[0]}"
 
 
-# 1) Baseline and data-layout-picking: single threaded, no prefetching, row- and colstore, all datatypes
+# 1) Baseline and data-layout-picking: single threaded, no prefetching, row- and colstore, int8
 DIR=1
 mkdir -p "$FOLDER/$DIR/"
-FILENAME=benchmark-prefetch0-smt1-thread"$SINGLE_THREAD_COUNT"
+FILENAME=benchmark-prefetch0-smt1-thread"$SINGLE_THREAD_COUNT-8bit"
 if $IS_POWER; then
   ppc64_cpu --smt=1 # SMT 1
   ppc64_cpu --dscr=1 # no prefetching
   
-  numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8,16,32,64 > $FOLDER/$DIR/$FILENAME-colstore.csv
-  numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8,16,32,64 > $FOLDER/$DIR/$FILENAME-rowstore.csv
+  numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME-colstore.csv
+  numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME-rowstore.csv
 
 else
   CPU="${CORE_BINDINGS[0]}" # SMT 1
   benchmark/prefetching_intel -d # no prefetching
 
-  numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8,16,32,64 > $FOLDER/$DIR/$FILENAME-colstore.csv
-  numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8,16,32,64 > $FOLDER/$DIR/$FILENAME-rowstore.csv
+  numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME-colstore.csv
+  numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME-rowstore.csv
 fi
 
 # 2) prefetching: single threaded, with and without prefetching, row- and colstore, int8
@@ -99,7 +99,6 @@ DATA_TYPES=(8 16 32 64)
 
 for DATA_TYPE in "${DATA_TYPES[@]}"; do
   FILENAME=benchmark-prefetch1-smt1-thread"$SINGLE_THREAD_COUNT"-"$DATA_TYPE"bit-colstore
-  echo $FILENAME
   if $IS_POWER; then
     ppc64_cpu --smt=1 # SMT 1
     ppc64_cpu --dscr=0 # prefetching
