@@ -55,42 +55,13 @@ else
   numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8,16,32,64 > $FOLDER/$DIR/$FILENAME-rowstore.csv
 fi
 
-
-
-# 2) Datatype-picking: single threaded, no prefetching, colstore, all datatypes (perf stat)
+# 2) prefetching: single threaded, with and without prefetching, row- and colstore, int8
 DIR=2
-mkdir -p "$FOLDER/$DIR/"
-EVENTS="cache-references,cache-misses,branches,branch-misses,task-clock,context-switches,cpu-migrations,page-faults,cycles,instructions"
-DATA_TYPES=(8 16 32 64)
-
-for DATA_TYPE in "${DATA_TYPES[@]}"; do
-  FILENAME=benchmark-prefetch0-smt1-thread"$SINGLE_THREAD_COUNT"-"$DATA_TYPE"bit-colstore
-  echo $FILENAME
-  if $IS_POWER; then
-    ppc64_cpu --smt=1 # SMT 1
-    ppc64_cpu --dscr=1 # no prefetching
-
-    perf stat -e "$EVENTS" \
-    --output "$FOLDER/$DIR/$FILENAME-stats.txt" \
-    numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$SINGLE_THREAD_COUNT" --data-types "$DATA_TYPE" > $FOLDER/$DIR/$FILENAME.csv
-
-  else
-    CPU="${CORE_BINDINGS[0]}" # SMT 1
-    benchmark/prefetching_intel -d # no prefetching
-
-    perf stat -e "$EVENTS" \
-    --output "$FOLDER/$DIR/$FILENAME-stats.txt" \
-    numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$SINGLE_THREAD_COUNT" --data-types "$DATA_TYPE" > $FOLDER/$DIR/$FILENAME.csv
-  fi
-done
-
-# 3) prefetching: single threaded, with and without prefetching, colstore, int64
-DIR=3
 mkdir -p "$FOLDER/$DIR/"
 
 
 for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
-  FILENAME=benchmark-prefetch"$PREFETCH_SET"-smt1-thread"$SINGLE_THREAD_COUNT"-64bit-colstore.csv
+  FILENAME=benchmark-prefetch"$PREFETCH_SET"-smt1-thread"$SINGLE_THREAD_COUNT"-8bit
 
   if $IS_POWER; then
     if [[ "$PREFETCH_SET" -eq 0 ]]; then
@@ -111,12 +82,42 @@ for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
 
   if $IS_POWER; then
     ppc64_cpu --smt=1 # SMT 1  
-    numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$SINGLE_THREAD_COUNT" --data-types 64 > $FOLDER/$DIR/$FILENAME
+    numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1  --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME-colstore.csv
+    numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME-rowstore.csv
   else
     CPU="${CORE_BINDINGS[0]}" # SMT 1
-    numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$SINGLE_THREAD_COUNT" --data-types 64 > $FOLDER/$DIR/$FILENAME
+    numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1  --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME-colstore.csv
+    numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME-rowstore.csv
   fi
 done
+
+# 3) Datatype-picking: single threaded, prefetching, colstore, all datatypes (perf stat)
+DIR=3
+mkdir -p "$FOLDER/$DIR/"
+EVENTS="cache-references,cache-misses,branches,branch-misses,task-clock,context-switches,cpu-migrations,page-faults,cycles,instructions"
+DATA_TYPES=(8 16 32 64)
+
+for DATA_TYPE in "${DATA_TYPES[@]}"; do
+  FILENAME=benchmark-prefetch1-smt1-thread"$SINGLE_THREAD_COUNT"-"$DATA_TYPE"bit-colstore
+  echo $FILENAME
+  if $IS_POWER; then
+    ppc64_cpu --smt=1 # SMT 1
+    ppc64_cpu --dscr=0 # prefetching
+
+    perf stat -e "$EVENTS" \
+    --output "$FOLDER/$DIR/$FILENAME-stats.txt" \
+    numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$SINGLE_THREAD_COUNT" --data-types "$DATA_TYPE" > $FOLDER/$DIR/$FILENAME.csv
+
+  else
+    CPU="${CORE_BINDINGS[0]}" # SMT 1
+    benchmark/prefetching_intel -e # prefetching
+
+    perf stat -e "$EVENTS" \
+    --output "$FOLDER/$DIR/$FILENAME-stats.txt" \
+    numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1 --thread-count "$SINGLE_THREAD_COUNT" --data-types "$DATA_TYPE" > $FOLDER/$DIR/$FILENAME.csv
+  fi
+done
+
 
 # 4) multithreading: single- and multi-threading, with prefetching, colstore, int64
 DIR=4
