@@ -61,7 +61,7 @@ mkdir -p "$FOLDER/$DIR/"
 
 
 for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
-  FILENAME=benchmark-prefetch"$PREFETCH_SET"-smt1-thread"$SINGLE_THREAD_COUNT"-8bit-colstore.csv
+  FILENAME=benchmark-prefetch"$PREFETCH_SET"-smt1-thread"$SINGLE_THREAD_COUNT"-8bit
 
   if $IS_POWER; then
     if [[ "$PREFETCH_SET" -eq 0 ]]; then
@@ -82,14 +82,12 @@ for PREFETCH_SET in "${PREFETCHER_SETTINGS[@]}"; do
 
   if $IS_POWER; then
     ppc64_cpu --smt=1 # SMT 1  
-    numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1  --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME
-    FILENAME=benchmark-prefetch"$PREFETCH_SET"-smt1-thread"$SINGLE_THREAD_COUNT"-8bit-rowstore.csv
-    numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME
+    numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 1  --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME-colstore.csv
+    numactl --cpunodebind=$CPUNODE --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME-rowstore.csv
   else
     CPU="${CORE_BINDINGS[0]}" # SMT 1
-    numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1  --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME
-    FILENAME=benchmark-prefetch"$PREFETCH_SET"-smt1-thread"$SINGLE_THREAD_COUNT"-8bit-rowstore.csv
-    numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME
+    numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 1  --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME-colstore.csv
+    numactl --physcpubind=$CPU --membind=$MEMNODE benchmark/benchmark --column-count 10 --thread-count "$SINGLE_THREAD_COUNT" --data-types 8 > $FOLDER/$DIR/$FILENAME-rowstore.csv
   fi
 done
 
@@ -112,7 +110,7 @@ for DATA_TYPE in "${DATA_TYPES[@]}"; do
 
   else
     CPU="${CORE_BINDINGS[0]}" # SMT 1
-    benchmark/prefetching_intel -e # no prefetching
+    benchmark/prefetching_intel -e # prefetching
 
     perf stat -e "$EVENTS" \
     --output "$FOLDER/$DIR/$FILENAME-stats.txt" \
