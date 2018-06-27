@@ -117,7 +117,7 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, in
     size_t partLength = colLength / threadCount, overhang = colLength % threadCount;
 
     auto attributeVector = generateData<T>(colLength * colCount, randomInit);
-    threadTimes.resize(threadCount*iterations);
+    threadTimes.resize(threadCount*sampleSize);
 
     size_t startIndex = 0;
     for (int j = 0; j < threadCount - 1; j++) {
@@ -148,10 +148,10 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, in
 
     // Average per run
     vector<long long int> times;
-    for(int i=0; i < iterations; i++) {
+    for (int s=0; s < sampleSize; s++) {
         long long int time = 0;
-        for(int j=0; j<threadCount; j++)
-            time += threadTimes[j*iterations + i];
+        for (int j=0; j<threadCount; j++)
+            time += threadTimes[j*sampleSize + s];
         times.push_back(time / threadCount);
     }
 
@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
     flags.Var(colCount, 'c', "column-count", 1, "Number of columns to use");
     flags.Var(threadCount, 't', "thread-count", 1, "Number of threads");
     flags.Var(iterations, 'i', "iterations", 0, "Number of inner iterations");
-    flags.Var(sampleSize, 's', "sample-size", 0, "Number of measurements");
+    flags.Var(sampleSize, 's', "sample-size", 10, "Number of measurements");
     flags.Var(dataTypes, 'd', "data-types", string(""), "Comma-separated list of types (e.g. 8 for int8_t)");
     flags.Bool(randomInit, 'r', "random-init", "Initialize randomly instead of 0-initialization", "Optional");
     flags.Bool(help, 'h', "help", "Show this help and exit", "Help");
