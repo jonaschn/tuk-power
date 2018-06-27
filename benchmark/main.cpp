@@ -63,6 +63,18 @@ void clearCache() {
   clear.resize(0);
 }
 
+inline void doComplicatedStuff() {
+    // Divide (Port 0)
+    volatile float fpDivide = 2.0f / 5;
+
+    // Vector Logicals (Port 0, 1, 5)
+    volatile bool vectorLogicals = fpDivide <= 20;
+
+    // Vector Shuffle (Port 5)
+    // std::vector<int> vShuffle{1,2,3,4,5};
+    // std::shuffle(vShuffle.begin(), vShuffle.end(), 0);
+}
+
 template <class T>
 static vector<T> generateData(size_t size, bool randomInit)
 {
@@ -89,6 +101,7 @@ void threadFunc(vector<T>& elements, int colCount, size_t startIndex, size_t end
     for (int i = 0; i < iterations; i++) {
         auto start = chrono::high_resolution_clock::now();
         for (size_t j = startIndex; j < endIndex; j++) {
+            doComplicatedStuff();
             volatile auto o3Trick = elements[j*colCount + 0]; // read first column
         }
         auto end = chrono::high_resolution_clock::now();
