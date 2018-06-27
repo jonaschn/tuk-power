@@ -27,6 +27,14 @@ def natural_order(text):
     return tuple(int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text))
 
 
+def computeXTicks():
+    return [100, 1000, 10000, 100000]
+
+
+def computeXLabels():
+    return ['a', 'b', 'c', 'd']
+
+
 def process_file(filename, show_variance, only_64, system_type):
     data = pd.read_csv(filename)
     csizes = np.unique(data[colszkey])
@@ -62,12 +70,12 @@ def process_file(filename, show_variance, only_64, system_type):
                      label=label,
                      color=colors[idx], alpha=0.7,
                      ecolor='gray', lw=2, capsize=5, capthick=2)
-    plt.xticks(family='sans-serif')
+    plt.xticks(computeXTicks(), computeXLabels(), family='sans-serif')
     plt.yticks(family='sans-serif')
 
     plt.legend()
-    plt.xlabel('Attribute Vector Size (in KiB)')
-    plt.xscale('log', basex=10)
+    plt.xlabel('Attribute Vector Size')
+    plt.xscale('log')
 
     def comma_seperators(x, pos):
         return "{:,}".format(int(x))
@@ -85,7 +93,7 @@ def process_file(filename, show_variance, only_64, system_type):
     # plt.title("{} - {}".format(store_title, prefetching_title), y=1.08)
 
     if system_type == 'intel':
-        plt.ylim(ymin=0, ymax=10)
+        plt.ylim(ymin=0, ymax=200)
     else:
         plt.ylim(ymin=0, ymax=350)
 
