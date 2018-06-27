@@ -34,7 +34,7 @@ static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * Ki
                                     64 * MiB, 128 * MiB, 256 * MiB, 1 * GiB, 4 * GiB};
 #endif
 
-static const float ITERATIONS_FACTOR = 1e5;
+static const float ITERATIONS_FACTOR = 1e4;
 
 vector<string> parseDataTypes(const string &dataTypes) {
     vector<string> result;
