@@ -34,7 +34,7 @@ static const size_t DB_SIZES[] = {8 * KiB, 16 * KiB, 32 * KiB, 48 * KiB, 64 * Ki
                                     64 * MiB, 128 * MiB, 256 * MiB, 1 * GiB, 4 * GiB};
 #endif
 
-static const float ITERATIONS_FACTOR = 1e5;
+static const float ITERATIONS_FACTOR = 1e4;
 
 vector<string> parseDataTypes(const string &dataTypes) {
     vector<string> result;
@@ -83,17 +83,18 @@ static volatile bool threadFlag = false;
 static vector<long long int> threadTimes;
 
 template <class T>
-void threadFunc(vector<T>& elements, int colCount, size_t startIndex, size_t endIndex, int threadId, int iterations){
-    while (!threadFlag)
-        ;
-    for (int i = 0; i < iterations; i++) {
-        auto start = chrono::high_resolution_clock::now();
-        for (size_t j = startIndex; j < endIndex; j++) {
-            volatile auto o3Trick = elements[j*colCount + 0]; // read first column
-        }
-        auto end = chrono::high_resolution_clock::now();
-        auto time = chrono::duration_cast<chrono::nanoseconds>(end - start);
-        threadTimes[threadId*iterations + i] = time.count();
+void threadFunc(vector<T>& elements, int colCount, size_t startIndex, size_t endIndex, int threadId, int iterations, int sampleSize){
+    while (!threadFlag){};
+    for (int s = 0; s < sampleSize; s++) {
+      auto start = chrono::high_resolution_clock::now();
+      for (int i = 0; i < iterations; i++) {
+          for (size_t j = startIndex; j < endIndex; j++) {
+              volatile auto o3Trick = elements[j*colCount + 0]; // read first column
+          }
+      }
+      auto end = chrono::high_resolution_clock::now();
+      auto time = chrono::duration_cast<chrono::nanoseconds>(end - start);
+      threadTimes[threadId*sampleSize + s] = time.count() / iterations;
     }
 }
 
@@ -108,7 +109,7 @@ void printResults(vector<long long int> times, size_t size, int threadCount, int
 }
 
 template <class T>
-void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bool randomInit) {
+void benchmark(size_t colSize, int colCount, int threadCount, int iterations, int sampleSize, bool randomInit) {
     const size_t colLength = colSize / sizeof(T);
 
     // Split array into *threadCount* sequential parts
@@ -116,13 +117,13 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bo
     size_t partLength = colLength / threadCount, overhang = colLength % threadCount;
 
     auto attributeVector = generateData<T>(colLength * colCount, randomInit);
-    threadTimes.resize(threadCount*iterations);
+    threadTimes.resize(threadCount*sampleSize);
 
     size_t startIndex = 0;
     for (int j = 0; j < threadCount - 1; j++) {
         size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
         auto threadInstance = new thread(threadFunc<T>, ref(attributeVector), colCount, startIndex,
-                                         endIndex, j, iterations);
+                                         endIndex, j, iterations, sampleSize);
         threads.push_back(threadInstance);
         startIndex = endIndex;
     }
@@ -133,7 +134,7 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bo
     size_t endIndex = startIndex + partLength + (j < overhang ? 1 : 0);
 
     threadFlag = true;
-    threadFunc<T>(attributeVector, colCount, startIndex, endIndex, j, iterations);
+    threadFunc<T>(attributeVector, colCount, startIndex, endIndex, j, iterations, sampleSize);
 
     for (thread *thread: threads) {
         (*thread).join();
@@ -147,10 +148,10 @@ void benchmark(size_t colSize, int colCount, int threadCount, int iterations, bo
 
     // Average per run
     vector<long long int> times;
-    for(int i=0; i < iterations; i++) {
+    for (int s=0; s < sampleSize; s++) {
         long long int time = 0;
-        for(int j=0; j<threadCount; j++)
-            time += threadTimes[j*iterations + i];
+        for (int j=0; j<threadCount; j++)
+            time += threadTimes[j*sampleSize + s];
         times.push_back(time / threadCount);
     }
 
@@ -161,6 +162,7 @@ int main(int argc, char* argv[]) {
     int colCount; // = 1 --> column-based layout, > 1 --> row-based layout
     int threadCount;
     int iterations;
+    int sampleSize;
     bool randomInit;
     bool help;
 
@@ -168,7 +170,8 @@ int main(int argc, char* argv[]) {
     Flags flags;
     flags.Var(colCount, 'c', "column-count", 1, "Number of columns to use");
     flags.Var(threadCount, 't', "thread-count", 1, "Number of threads");
-    flags.Var(iterations, 'i', "iterations", 0, "Number of iterations");
+    flags.Var(iterations, 'i', "iterations", 0, "Number of inner iterations");
+    flags.Var(sampleSize, 's', "sample-size", 10, "Number of measurements");
     flags.Var(dataTypes, 'd', "data-types", string(""), "Comma-separated list of types (e.g. 8 for int8_t)");
     flags.Bool(randomInit, 'r', "random-init", "Initialize randomly instead of 0-initialization", "Optional");
     flags.Bool(help, 'h', "help", "Show this help and exit", "Help");
@@ -201,16 +204,16 @@ int main(int argc, char* argv[]) {
         int dynamicIterations = iterations == 0 ? max(6, (int) (ITERATIONS_FACTOR / size * DB_SIZES[0])) : iterations;
 
         if (useInt8) {
-            benchmark<int8_t>(size, colCount, threadCount, dynamicIterations, randomInit);
+            benchmark<int8_t>(size, colCount, threadCount, dynamicIterations, sampleSize, randomInit);
         }
         if (useInt16) {
-            benchmark<int16_t>(size, colCount, threadCount, dynamicIterations, randomInit);
+            benchmark<int16_t>(size, colCount, threadCount, dynamicIterations, sampleSize, randomInit);
         }
         if (useInt32) {
-            benchmark<int32_t>(size, colCount, threadCount, dynamicIterations, randomInit);
+            benchmark<int32_t>(size, colCount, threadCount, dynamicIterations, sampleSize, randomInit);
         }
         if (useInt64) {
-            benchmark<int64_t>(size, colCount, threadCount, dynamicIterations, randomInit);
+            benchmark<int64_t>(size, colCount, threadCount, dynamicIterations, sampleSize, randomInit);
         }
     }
 
