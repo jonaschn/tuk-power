@@ -13,7 +13,7 @@ rc('font', **{'family': 'sans-serif', 'sans-serif': ['Verdana']})
 parser = argparse.ArgumentParser(description='Generate plots for the TuK benchmarks')
 
 tkey = 'Time in ns'
-colszkey = 'Column size in KB'
+colszkey = 'Column size in KB'  # These are actually KiB.
 dtypekey = 'Data type'
 threads_key = 'Thread Count'
 colors = ['#f6a800', '#af0039', '#dd630d', '#007a9e']
@@ -48,7 +48,8 @@ def process_file(filename, show_variance, only_64, system_type):
     groups = data.groupby(by=dtype_cols)
 
     for idx, (group, df) in enumerate(groups):
-        bandwidth = df[colszkey] / df[tkey] / 1024 / 1024 * 1e9
+        data_in_bytes = df[colszkey] * 1024
+        bandwidth = data_in_bytes / df[tkey]  # GB/s, not GiB/s
         bandwidth_means = [np.mean(bandwidth[df[colszkey] == csz]) for csz in csizes]
         bandwidth_stds = [np.std(bandwidth[df[colszkey] == csz]) for csz in csizes]
 
@@ -62,30 +63,30 @@ def process_file(filename, show_variance, only_64, system_type):
                      label=label,
                      color=colors[idx], alpha=0.7,
                      ecolor='gray', lw=2, capsize=5, capthick=2)
-    plt.xticks(family='sans-serif')
-    plt.yticks(family='sans-serif')
 
-    plt.legend()
-    plt.xlabel('Attribute Vector Size (in KiB)')
+    plt.xlabel('Attribute Vector Size')
     plt.xscale('log', basex=10)
+    plt.xticks(plt.xticks()[0][:-1], family='sans-serif')
+    plt.yticks(family='sans-serif')
+    plt.legend()
 
     def xFuncFormatter(x, pos):
-        if (x > 1000000):
+        if (x >= 1000000):
             value = int(x / 1000000)
             unit = "GB"
-        elif (x > 1000):
+        elif (x >= 1000):
             value = int(x / 1000)
             unit = "MB"
         else:
             value = int(x)
             unit = "KB"
-        return "{:,}{}".format(value, unit)
+        return "{:,} {}".format(value, unit)
 
     plt.gca().xaxis.set_major_formatter(ticker.FuncFormatter(xFuncFormatter))
     plt.minorticks_off()
     plt.xlim(xmin=8)
     plt.gca().yaxis.grid(True, lw=.5, ls='--')
-    plt.ylabel('Effective Scan Bandwidth (in GiB/s)')
+    plt.ylabel('Effective Scan Bandwidth (in GB/s)')
 
     prefetching_enabled = "prefetch1" in filename
     column_store = not "rowstore" in filename
@@ -113,7 +114,7 @@ def process_file(filename, show_variance, only_64, system_type):
 
     # show cache sizes of L1, L2 and L3
     for cache in cache_sizes_in_kib:
-        plt.axvline(cache_sizes_in_kib[cache], color='k', alpha=.3)
+        plt.axvline(cache_sizes_in_kib[cache] * 1024 / 1000, color='k', alpha=.3)
         plt.text(cache_sizes_in_kib[cache] * 0.6, plt.ylim()[1], cache, color='k', alpha=.3)
 
     # print labels in the right order
