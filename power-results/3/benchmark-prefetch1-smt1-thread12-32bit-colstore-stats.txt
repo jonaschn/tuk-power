@@ -1,0 +1,18 @@
+# started on Sun Jun 24 15:59:28 2018
+
+
+ Performance counter stats for 'numactl --cpunodebind=1 --membind=1 benchmark/benchmark --column-count 1 --thread-count 12 --data-types 32':
+
+       13416071161      cache-references          # 1273.068 M/sec                    (66.67%)
+         598877532      cache-misses              #    4.464 % of all cache refs      (82.83%)
+       13026864961      branches                  # 1236.136 M/sec                    (33.33%)
+          11499238      branch-misses             #    0.09% of all branches          (50.59%)
+      10538.379118      task-clock (msec)         #    4.563 CPUs utilized          
+               132      context-switches          #    0.013 K/sec                  
+                11      cpu-migrations            #    0.001 K/sec                  
+              2111      page-faults               #    0.200 K/sec                  
+       44817681090      cycles                    #    4.253 GHz                      (67.67%)
+       53987861266      instructions              #    1.20  insn per cycle                                              (84.18%)
+
+       2.309355072 seconds time elapsed
+
