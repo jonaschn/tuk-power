@@ -27,14 +27,6 @@ def natural_order(text):
     return tuple(int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text))
 
 
-def computeXTicks():
-    return [100, 1000, 10000, 100000]
-
-
-def computeXLabels():
-    return ['a', 'b', 'c', 'd']
-
-
 def process_file(filename, show_variance, only_64, system_type):
     data = pd.read_csv(filename)
     csizes = np.unique(data[colszkey])
@@ -70,17 +62,26 @@ def process_file(filename, show_variance, only_64, system_type):
                      label=label,
                      color=colors[idx], alpha=0.7,
                      ecolor='gray', lw=2, capsize=5, capthick=2)
-    plt.xticks(computeXTicks(), computeXLabels(), family='sans-serif')
+    plt.xticks(family='sans-serif')
     plt.yticks(family='sans-serif')
 
     plt.legend()
-    plt.xlabel('Attribute Vector Size')
-    plt.xscale('log')
+    plt.xlabel('Attribute Vector Size (in KiB)')
+    plt.xscale('log', basex=10)
 
-    def comma_seperators(x, pos):
-        return "{:,}".format(int(x))
+    def xFuncFormatter(x, pos):
+        if (x > 1000000):
+            value = int(x / 1000000)
+            unit = "GB"
+        elif (x > 1000):
+            value = int(x / 1000)
+            unit = "MB"
+        else:
+            value = int(x)
+            unit = "KB"
+        return "{:,}{}".format(value, unit)
 
-    plt.gca().xaxis.set_major_formatter(ticker.FuncFormatter(comma_seperators))
+    plt.gca().xaxis.set_major_formatter(ticker.FuncFormatter(xFuncFormatter))
     plt.minorticks_off()
     plt.xlim(xmin=8)
     plt.gca().yaxis.grid(True, lw=.5, ls='--')
@@ -93,7 +94,7 @@ def process_file(filename, show_variance, only_64, system_type):
     # plt.title("{} - {}".format(store_title, prefetching_title), y=1.08)
 
     if system_type == 'intel':
-        plt.ylim(ymin=0, ymax=200)
+        plt.ylim(ymin=0, ymax=10)
     else:
         plt.ylim(ymin=0, ymax=350)
 
