@@ -27,7 +27,7 @@ def natural_order(text):
     return tuple(int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text))
 
 
-def process_file(filename, show_variance, only_64, system_type):
+def process_file(filename, show_variance, only_64, system_type, ylim):
     data = pd.read_csv(filename)
     csizes = np.unique(data[colszkey])
 
@@ -94,10 +94,7 @@ def process_file(filename, show_variance, only_64, system_type):
     store_title = "Column Store" if column_store else "Row Store"
     # plt.title("{} - {}".format(store_title, prefetching_title), y=1.08)
 
-    if system_type == 'intel':
-        plt.ylim(ymin=0, ymax=10)
-    else:
-        plt.ylim(ymin=0, ymax=350)
+    plt.ylim(ymin=0, ymax=ylim)
 
     if system_type == 'intel':  # Intel E7-8890 v2 node with 15 cores
         cache_sizes_in_kib = {
@@ -132,6 +129,7 @@ if __name__ == '__main__':
     parser.add_argument('system', help='system to plot results for', choices=['intel', 'power'])
     parser.add_argument('--no-variance', help='hide the variance in plots', action='store_false', dest='variance')
     parser.add_argument('--only-64', help='whether to plot only results for int64', action='store_true')
+    parser.add_argument('--ylim', help='The maximum of the y axis', type=int, default=350)
     args = parser.parse_args()
 
     print(vars(args))
@@ -141,9 +139,9 @@ if __name__ == '__main__':
                 if filename[-4:] == '.csv':
                     print('Plotting ' + filename + '...')
                     filepath = os.path.join(args.path, filename)
-                    process_file(filepath, args.variance, args.only_64, args.system)
+                    process_file(filepath, args.variance, args.only_64, args.system, args.ylim)
         else:
-            process_file(args.path, args.variance, args.only_64, args.system)
+            process_file(args.path, args.variance, args.only_64, args.system, args.ylim)
         print('Done')
     except FileNotFoundError as e:
         print(e)
