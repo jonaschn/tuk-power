@@ -88,9 +88,12 @@ void threadFunc(vector<T>& elements, int colCount, size_t startIndex, size_t end
     for (int s = 0; s < sampleSize; s++) {
       auto start = chrono::high_resolution_clock::now();
       for (int i = 0; i < iterations; i++) {
+          uint64_t count = 0;
           for (size_t j = startIndex; j < endIndex; j++) {
-              volatile auto o3Trick = elements[j*colCount + 0]; // read first column
+              auto element = elements[j * colCount + 0]; // read first column
+              if (element == 0) count++;
           }
+          volatile uint64_t o3Trick = count;
       }
       auto end = chrono::high_resolution_clock::now();
       auto time = chrono::duration_cast<chrono::nanoseconds>(end - start);
