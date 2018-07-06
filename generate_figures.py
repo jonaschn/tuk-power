@@ -27,7 +27,7 @@ def natural_order(text):
     return tuple(int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text))
 
 
-def process_file(filename, show_variance, only_64, system_type, ylim):
+def process_file(filename, show_variance, only_64, system_type, ylim, multicore):
     data = pd.read_csv(filename)
     csizes = np.unique(data[colszkey])
 
@@ -98,21 +98,21 @@ def process_file(filename, show_variance, only_64, system_type, ylim):
 
     if system_type == 'intel':  # Intel E7-8890 v2 node with 15 cores
         cache_sizes_in_kib = {
-            'L1': 480,  # 15x 32 KiB/core
-            'L2': 3840,  # 15x 256 KiB/core
+            'L1': 15 * 32 if multicore else 32,  # 15x 32 KiB/core
+            'L2': 15 * 256 if multicore else 256,  # 15x 256 KiB/core
             'L3': 38400  # 15x 2,5 MiB/core = 37,5 MiB (shared)
         }
     else: # POWER 8 node with 12 cores
         cache_sizes_in_kib = {
-            'L1': 768,  # 12x 64 KiB/core
-            'L2': 6144,  # 12x 512 KiB/core = 6MiB
+            'L1': 12 * 64 if multicore else 64,  # 12x 64 KiB/core
+            'L2': 12 * 512 if multicore else 512,  # 12x 512 KiB/core = 6MiB
             'L3': 98304  # 12x 8192 KiB/core = 96MiB (shared)
         }
 
     # show cache sizes of L1, L2 and L3
     for cache in cache_sizes_in_kib:
-        plt.axvline(cache_sizes_in_kib[cache] * 1024 / 1000, color='k', alpha=.3)
-        plt.text(cache_sizes_in_kib[cache] * 0.6, plt.ylim()[1], cache, color='k', alpha=.3)
+        plt.axvline(cache_sizes_in_kib[cache] * 1024 / 1000, color='k', alpha=.7)
+        plt.text(cache_sizes_in_kib[cache] * 0.6, plt.ylim()[1], cache, color='k', alpha=.7)
 
     # print labels in the right order
     handles, labels = plt.gca().get_legend_handles_labels()
@@ -129,6 +129,8 @@ if __name__ == '__main__':
     parser.add_argument('system', help='system to plot results for', choices=['intel', 'power'])
     parser.add_argument('--no-variance', help='hide the variance in plots', action='store_false', dest='variance')
     parser.add_argument('--only-64', help='whether to plot only results for int64', action='store_true')
+    parser.add_argument('--singlecore', help='move the cache bars to values for a single core', action='store_false',
+                        dest='multicore')
     parser.add_argument('--ylim', help='The maximum of the y axis', type=int, default=350)
     args = parser.parse_args()
 
@@ -139,9 +141,9 @@ if __name__ == '__main__':
                 if filename[-4:] == '.csv':
                     print('Plotting ' + filename + '...')
                     filepath = os.path.join(args.path, filename)
-                    process_file(filepath, args.variance, args.only_64, args.system, args.ylim)
+                    process_file(filepath, args.variance, args.only_64, args.system, args.ylim, args.multicore)
         else:
-            process_file(args.path, args.variance, args.only_64, args.system, args.ylim)
+            process_file(args.path, args.variance, args.only_64, args.system, args.ylim, args.multicore)
         print('Done')
     except FileNotFoundError as e:
         print(e)
