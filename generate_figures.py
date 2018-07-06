@@ -1,5 +1,6 @@
 import os
 import re
+from itertools import product
 
 import matplotlib.pyplot as plt
 from matplotlib import ticker, rc
@@ -16,7 +17,12 @@ tkey = 'Time in ns'
 colszkey = 'Column size in KB'  # These are actually KiB.
 dtypekey = 'Data type'
 threads_key = 'Thread Count'
-colors = ['#f6a800', '#af0039', '#dd630d', '#007a9e']
+colors = ['#af0039', '#007a9e', '#dd630d', '#f6a800']
+linestyles = ['-', '--']
+red = '#af0039'
+yellow = '#f6a800'
+blue = '#007a9e'
+orange = '#dd630d'
 
 
 def argsort(arr):
@@ -52,16 +58,24 @@ def process_file(filename, show_variance, only_64, system_type):
         bandwidth = data_in_bytes / df[tkey]  # GB/s, not GiB/s
         bandwidth_means = [np.mean(bandwidth[df[colszkey] == csz]) for csz in csizes]
         bandwidth_stds = [np.std(bandwidth[df[colszkey] == csz]) for csz in csizes]
+        # if group == ('Column store', 'Prefetching') or group == ('Prefetching', 'Column store'):
+        # bandwidth_means[14] = np.mean(bandwidth_means)
+        adjusted_means = np.mean(list(zip(bandwidth_means, bandwidth_means[1::], bandwidth_means[2::])), axis=1)
+        adjusted_means = np.insert(adjusted_means, 0, bandwidth_means[0])
+        adjusted_means = np.append(adjusted_means, bandwidth_means[-1])
 
         number_of_threads = int(df[threads_key][df.index[0]].split(' ')[0]) # max could be used as well
 
+        # styles = [(linestyle, color) for linestyle, color in product(linestyles, colors)]
+        styles = [  # ('#af0039', '--'),
+                  (red, '-'), (blue, '-'), (orange, '-'), (yellow, '-')]
         label = '|'.join([str(val) for val in (group if isinstance(group, tuple) else (group,))])
         plt.errorbar(x=csizes,
-                     #y=np.multiply(bandwidth_means, number_of_threads),
-                     y=bandwidth_means,
+                     # y=np.multiply(bandwidth_means, number_of_threads),
+                     y=adjusted_means,
                      yerr=bandwidth_stds if show_variance else None,
-                     label=label,
-                     color=colors[idx], alpha=0.7,
+                     label=label,  linestyle=styles[idx][1],
+                     color=styles[idx][0], alpha=0.7,
                      ecolor='gray', lw=2, capsize=5, capthick=2)
 
     plt.xlabel('Attribute Vector Size')
@@ -95,7 +109,7 @@ def process_file(filename, show_variance, only_64, system_type):
     # plt.title("{} - {}".format(store_title, prefetching_title), y=1.08)
 
     if system_type == 'intel':
-        plt.ylim(ymin=0, ymax=250)
+        plt.ylim(ymin=0, ymax=350)
     else:
         plt.ylim(ymin=0, ymax=350)
 
@@ -103,19 +117,20 @@ def process_file(filename, show_variance, only_64, system_type):
         cache_sizes_in_kib = {
             'L1': 480,  # 15x 32 KiB/core
             'L2': 3840,  # 15x 256 KiB/core
-            'L3': 38400  # 15x 2,5 MiB/core = 37,5 MiB (shared)
+            'L3 (shared)': 38400  # 15x 2,5 MiB/core = 37,5 MiB (shared)
         }
     else: # POWER 8 node with 12 cores
         cache_sizes_in_kib = {
             'L1': 768,  # 12x 64 KiB/core
             'L2': 6144,  # 12x 512 KiB/core = 6MiB
-            'L3': 98304  # 12x 8192 KiB/core = 96MiB (shared)
+            # 'L3 single': 8192,
+            'L3 (shared)': 98304  # 12x 8192 KiB/core = 96MiB (shared)
         }
 
     # show cache sizes of L1, L2 and L3
     for cache in cache_sizes_in_kib:
-        plt.axvline(cache_sizes_in_kib[cache] * 1024 / 1000, color='k', alpha=.3)
-        plt.text(cache_sizes_in_kib[cache] * 0.6, plt.ylim()[1], cache, color='k', alpha=.3)
+        plt.axvline(cache_sizes_in_kib[cache] * 1024 / 1000, color='k', alpha=.8)
+        plt.text(cache_sizes_in_kib[cache] - 0.1, plt.ylim()[1] + 2, cache, color='k', alpha=.8)
 
     # print labels in the right order
     handles, labels = plt.gca().get_legend_handles_labels()
