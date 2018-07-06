@@ -1,0 +1,73 @@
+Column size in KB,Data type,Time in ns,Thread Count,DB type
+8                ,int16    ,2738      ,1 threads   ,Column store
+8                ,int16    ,2705      ,1 threads   ,Column store
+8                ,int16    ,2731      ,1 threads   ,Column store
+16               ,int16    ,5474      ,1 threads   ,Column store
+16               ,int16    ,5356      ,1 threads   ,Column store
+16               ,int16    ,5372      ,1 threads   ,Column store
+32               ,int16    ,10990     ,1 threads   ,Column store
+32               ,int16    ,10998     ,1 threads   ,Column store
+32               ,int16    ,11017     ,1 threads   ,Column store
+48               ,int16    ,17082     ,1 threads   ,Column store
+48               ,int16    ,17057     ,1 threads   ,Column store
+48               ,int16    ,17073     ,1 threads   ,Column store
+64               ,int16    ,22760     ,1 threads   ,Column store
+64               ,int16    ,22761     ,1 threads   ,Column store
+64               ,int16    ,22757     ,1 threads   ,Column store
+96               ,int16    ,34152     ,1 threads   ,Column store
+96               ,int16    ,34142     ,1 threads   ,Column store
+96               ,int16    ,34120     ,1 threads   ,Column store
+128              ,int16    ,45529     ,1 threads   ,Column store
+128              ,int16    ,45457     ,1 threads   ,Column store
+128              ,int16    ,45481     ,1 threads   ,Column store
+256              ,int16    ,106838    ,1 threads   ,Column store
+256              ,int16    ,106897    ,1 threads   ,Column store
+256              ,int16    ,106837    ,1 threads   ,Column store
+384              ,int16    ,172474    ,1 threads   ,Column store
+384              ,int16    ,172454    ,1 threads   ,Column store
+384              ,int16    ,172415    ,1 threads   ,Column store
+480              ,int16    ,219785    ,1 threads   ,Column store
+480              ,int16    ,219613    ,1 threads   ,Column store
+480              ,int16    ,219612    ,1 threads   ,Column store
+512              ,int16    ,234318    ,1 threads   ,Column store
+512              ,int16    ,234361    ,1 threads   ,Column store
+512              ,int16    ,236699    ,1 threads   ,Column store
+1024             ,int16    ,441446    ,1 threads   ,Column store
+1024             ,int16    ,443084    ,1 threads   ,Column store
+1024             ,int16    ,446476    ,1 threads   ,Column store
+2048             ,int16    ,1008726   ,1 threads   ,Column store
+2048             ,int16    ,890054    ,1 threads   ,Column store
+2048             ,int16    ,887344    ,1 threads   ,Column store
+3840             ,int16    ,1953618   ,1 threads   ,Column store
+3840             ,int16    ,1666022   ,1 threads   ,Column store
+3840             ,int16    ,1665837   ,1 threads   ,Column store
+4096             ,int16    ,2111240   ,1 threads   ,Column store
+4096             ,int16    ,1776122   ,1 threads   ,Column store
+4096             ,int16    ,1774869   ,1 threads   ,Column store
+8192             ,int16    ,5037330   ,1 threads   ,Column store
+8192             ,int16    ,3649574   ,1 threads   ,Column store
+8192             ,int16    ,3658976   ,1 threads   ,Column store
+16384            ,int16    ,11420676  ,1 threads   ,Column store
+16384            ,int16    ,7297198   ,1 threads   ,Column store
+16384            ,int16    ,7509422   ,1 threads   ,Column store
+32768            ,int16    ,25165433  ,1 threads   ,Column store
+32768            ,int16    ,16786723  ,1 threads   ,Column store
+32768            ,int16    ,17506912  ,1 threads   ,Column store
+38400            ,int16    ,52003981  ,1 threads   ,Column store
+38400            ,int16    ,44478570  ,1 threads   ,Column store
+38400            ,int16    ,46117107  ,1 threads   ,Column store
+65536            ,int16    ,129081805 ,1 threads   ,Column store
+65536            ,int16    ,129268938 ,1 threads   ,Column store
+65536            ,int16    ,129238620 ,1 threads   ,Column store
+131072           ,int16    ,258625131 ,1 threads   ,Column store
+131072           ,int16    ,258955427 ,1 threads   ,Column store
+131072           ,int16    ,257657222 ,1 threads   ,Column store
+262144           ,int16    ,517793373 ,1 threads   ,Column store
+262144           ,int16    ,517164278 ,1 threads   ,Column store
+262144           ,int16    ,518441271 ,1 threads   ,Column store
+1.04858e+06      ,int16    ,2066144166,1 threads   ,Column store
+1.04858e+06      ,int16    ,2063068670,1 threads   ,Column store
+1.04858e+06      ,int16    ,2064870424,1 threads   ,Column store
+4.1943e+06       ,int16    ,8274996294,1 threads   ,Column store
+4.1943e+06       ,int16    ,8273621021,1 threads   ,Column store
+4.1943e+06       ,int16    ,8260138784,1 threads   ,Column store
