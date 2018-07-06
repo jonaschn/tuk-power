@@ -58,11 +58,17 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore)
         bandwidth = data_in_bytes / df[tkey]  # GB/s, not GiB/s
         bandwidth_means = [np.mean(bandwidth[df[colszkey] == csz]) for csz in csizes]
         bandwidth_stds = [np.std(bandwidth[df[colszkey] == csz]) for csz in csizes]
+
+        # Use to remove irregularity in prefetching plot
         # if group == ('Column store', 'Prefetching') or group == ('Prefetching', 'Column store'):
         # bandwidth_means[14] = np.mean(bandwidth_means)
+
+        # Use adjusted means if we need to smooth the curve
         adjusted_means = np.mean(list(zip(bandwidth_means, bandwidth_means[1::], bandwidth_means[2::])), axis=1)
         adjusted_means = np.insert(adjusted_means, 0, bandwidth_means[0])
         adjusted_means = np.append(adjusted_means, bandwidth_means[-1])
+        # otherwise
+        # adjusted_means = bandwidth_means
 
         number_of_threads = int(df[threads_key][df.index[0]].split(' ')[0]) # max could be used as well
 
