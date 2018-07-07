@@ -1,6 +1,5 @@
 import os
 import re
-from itertools import product
 
 import matplotlib.pyplot as plt
 from matplotlib import ticker, rc
@@ -159,11 +158,12 @@ if __name__ == '__main__':
     print(vars(args))
     try:
         if os.path.isdir(args.path):
-            for filename in os.listdir(args.path):
-                if filename[-4:] == '.csv':
-                    print('Plotting ' + filename + '...')
-                    filepath = os.path.join(args.path, filename)
-                    process_file(filepath, args.variance, args.only_64, args.system, args.ylim, args.multicore)
+            for root, subdirs, files in os.walk(args.path):
+                for filename in files:
+                    if filename[-4:] == '.csv':
+                        print('Plotting ' + filename + '...')
+                        filepath = os.path.join(root, filename)
+                        process_file(filepath, args.variance, args.only_64, args.system, args.ylim, args.multicore)
         else:
             process_file(args.path, args.variance, args.only_64, args.system, args.ylim, args.multicore)
         print('Done')
