@@ -20,7 +20,7 @@ tail -n +2 -q $FOLDER/3/benchmark-prefetch0*.csv >> $FOLDER/3/prefetch0.csv
 tail -n +2 -q $FOLDER/3/benchmark-prefetch1*.csv >> $FOLDER/3/prefetch1.csv
 sed 's/$/,No Prefetching/' $FOLDER/3/prefetch0.csv >> $FOLDER/3.csv
 sed 's/$/,With Prefetching/' $FOLDER/3/prefetch1.csv >> $FOLDER/3.csv
-python3 generate_figures.py --no-variance $FOLDER/3.csv $PLATFORM --ylim 16 --singlecore
+python3 generate_figures.py --no-variance $FOLDER/3.csv $PLATFORM --ylim 16 --singlecore --dashed
 rm $FOLDER/3.csv $FOLDER/3/prefetch*.csv
 
 echo "4) multicore: single-threaded, with prefetching, colstore, int64, multiple cores"
