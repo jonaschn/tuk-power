@@ -74,7 +74,9 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore)
 
         # styles = [(linestyle, color) for linestyle, color in product(linestyles, colors)]
         styles = [  # ('#af0039', '--'),
-                  (red, '-'), (blue, '-'), (orange, '-'), (yellow, '-')]
+                  (red, '-'), (blue, '-'), (orange, '-'), (yellow, '-'),
+                  (red, '--'), (blue, '--'), (orange, '--'), (yellow, '--')
+        ]
         label = '|'.join([str(val) for val in (group if isinstance(group, tuple) else (group,))])
         plt.errorbar(x=csizes,
                      # y=np.multiply(bandwidth_means, number_of_threads),
