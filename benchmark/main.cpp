@@ -86,18 +86,18 @@ template <class T>
 void threadFunc(vector<T>& elements, int colCount, size_t startIndex, size_t endIndex, int threadId, int iterations, int sampleSize){
     while (!threadFlag){};
     for (int s = 0; s < sampleSize; s++) {
+      uint64_t count = 0;
       auto start = chrono::high_resolution_clock::now();
       for (int i = 0; i < iterations; i++) {
-          uint64_t count = 0;
           for (size_t j = startIndex; j < endIndex; j++) {
               auto element = elements[j * colCount + 0]; // read first column
               if (element == 0) count++;
           }
-          volatile uint64_t o3Trick = count;
       }
       auto end = chrono::high_resolution_clock::now();
       auto time = chrono::duration_cast<chrono::nanoseconds>(end - start);
       threadTimes[threadId*sampleSize + s] = time.count() / iterations;
+      cerr << "o3Trick" << count << endl; // volatile uint64_t o3Trick = count;
     }
 }
 
