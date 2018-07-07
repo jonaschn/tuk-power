@@ -147,7 +147,7 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore,
     handles, labels = plt.gca().get_legend_handles_labels()
 
     order = argsort([natural_order(label) for label in labels])
-    plt.legend([handles[i] for i in order], [labels[i] for i in order], loc=2, prop={'size': 10})
+    plt.legend([handles[i] for i in order], [labels[i] for i in order], loc=1, prop={'size': 10})
 
     plt.savefig(filename.replace('.csv', '.png'), dpi=200)
     plt.close()
