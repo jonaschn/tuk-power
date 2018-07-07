@@ -6,6 +6,7 @@ from matplotlib import ticker, rc
 import numpy as np
 import pandas as pd
 import argparse
+from tqdm import tqdm
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Verdana']})
 # rc('text', usetex=True)
@@ -16,7 +17,12 @@ tkey = 'Time in ns'
 colszkey = 'Column size in KB'  # These are actually KiB.
 dtypekey = 'Data type'
 threads_key = 'Thread Count'
-colors = ['#f6a800', '#af0039', '#dd630d', '#007a9e']
+colors = ['#af0039', '#007a9e', '#dd630d', '#f6a800']
+linestyles = ['-', '--']
+red = '#af0039'
+yellow = '#f6a800'
+blue = '#007a9e'
+orange = '#dd630d'
 
 
 def argsort(arr):
@@ -27,7 +33,7 @@ def natural_order(text):
     return tuple(int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text))
 
 
-def process_file(filename, show_variance, only_64, system_type, ylim, multicore):
+def process_file(filename, show_variance, only_64, system_type, ylim, multicore, log, dashed):
     data = pd.read_csv(filename)
     csizes = np.unique(data[colszkey])
 
@@ -42,7 +48,7 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore)
             dtype_cols.append(column)
 
     if not dtype_cols:
-        print('Not enough dimensions to group by. Therefore data type was chosen.')
+        log.append(filename + ': Not enough dimensions to group by. Therefore data type was chosen.')
         dtype_cols.append(dtypekey)
 
     groups = data.groupby(by=dtype_cols)
@@ -53,15 +59,37 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore)
         bandwidth_means = [np.mean(bandwidth[df[colszkey] == csz]) for csz in csizes]
         bandwidth_stds = [np.std(bandwidth[df[colszkey] == csz]) for csz in csizes]
 
+        # Use to remove irregularity in prefetching plot
+        # if group == ('Column store', 'Prefetching') or group == ('Prefetching', 'Column store'):
+        # bandwidth_means[14] = np.mean(bandwidth_means)
+
+        # Use adjusted means if we need to smooth the curve
+        adjusted_means = np.mean(list(zip(bandwidth_means, bandwidth_means[1::], bandwidth_means[2::])), axis=1)
+        adjusted_means = np.insert(adjusted_means, 0, bandwidth_means[0])
+        adjusted_means = np.append(adjusted_means, bandwidth_means[-1])
+        # otherwise
+        # adjusted_means = bandwidth_means
+
         number_of_threads = int(df[threads_key][df.index[0]].split(' ')[0]) # max could be used as well
 
+        # styles = [(linestyle, color) for linestyle, color in product(linestyles, colors)]
+        if not dashed:
+            styles = [  # ('#af0039', '--'),
+                      (red, '-'), (yellow, '-'), (orange, '-'), (blue, '-'),
+                      (red, '--'), (yellow, '--'), (orange, '--'), (blue, '--')
+            ]
+        else:
+            styles = [
+                (red, '--'), (red, '-'), (yellow, '--'), (yellow, '-'),
+                (orange, '-'),  (orange, '--'), (blue, '-'), (blue, '--')
+            ]
         label = '|'.join([str(val) for val in (group if isinstance(group, tuple) else (group,))])
         plt.errorbar(x=csizes,
-                     #y=np.multiply(bandwidth_means, number_of_threads),
-                     y=bandwidth_means,
+                     # y=np.multiply(bandwidth_means, number_of_threads),
+                     y=adjusted_means,
                      yerr=bandwidth_stds if show_variance else None,
-                     label=label,
-                     color=colors[idx], alpha=0.7,
+                     label=label,  linestyle=styles[idx][1],
+                     color=styles[idx][0], alpha=0.7,
                      ecolor='gray', lw=2, capsize=5, capthick=2)
 
     plt.xlabel('Attribute Vector Size')
@@ -132,18 +160,26 @@ if __name__ == '__main__':
     parser.add_argument('--singlecore', help='move the cache bars to values for a single core', action='store_false',
                         dest='multicore')
     parser.add_argument('--ylim', help='The maximum of the y axis', type=int, default=350)
+    parser.add_argument('--dashed', help='If to draw lines solid and dashed, alternating', action='store_true')
     args = parser.parse_args()
 
     print(vars(args))
     try:
+        log = []
         if os.path.isdir(args.path):
-            for filename in os.listdir(args.path):
-                if filename[-4:] == '.csv':
-                    print('Plotting ' + filename + '...')
-                    filepath = os.path.join(args.path, filename)
-                    process_file(filepath, args.variance, args.only_64, args.system, args.ylim, args.multicore)
+            files = []
+            for root, subdirs, filenames in os.walk(args.path):
+                for filename in filenames:
+                    if filename[-4:] == '.csv':
+                            filepath = os.path.join(root, filename)
+                            files.append(filepath)
+            print(str(len(files)) + ' files found')
+            for file in tqdm(files):
+                process_file(filepath, args.variance, args.only_64, args.system, args.ylim, args.multicore, log, args.dashed)
         else:
-            process_file(args.path, args.variance, args.only_64, args.system, args.ylim, args.multicore)
+            process_file(args.path, args.variance, args.only_64, args.system, args.ylim, args.multicore, log, args.dashed)
+        for entry in log:
+            print(entry)
         print('Done')
     except FileNotFoundError as e:
         print(e)
