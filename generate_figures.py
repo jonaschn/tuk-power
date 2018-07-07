@@ -3,10 +3,10 @@ import re
 
 import matplotlib.pyplot as plt
 from matplotlib import ticker, rc
-from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import argparse
+from tqdm import tqdm
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Verdana']})
 # rc('text', usetex=True)
@@ -33,7 +33,7 @@ def natural_order(text):
     return tuple(int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text))
 
 
-def process_file(filename, show_variance, only_64, system_type, ylim, multicore, log):
+def process_file(filename, show_variance, only_64, system_type, ylim, multicore, log, dashed):
     data = pd.read_csv(filename)
     csizes = np.unique(data[colszkey])
 
@@ -73,10 +73,16 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore,
         number_of_threads = int(df[threads_key][df.index[0]].split(' ')[0]) # max could be used as well
 
         # styles = [(linestyle, color) for linestyle, color in product(linestyles, colors)]
-        styles = [  # ('#af0039', '--'),
-                  (red, '-'), (blue, '-'), (orange, '-'), (yellow, '-'),
-                  (red, '--'), (blue, '--'), (orange, '--'), (yellow, '--')
-        ]
+        if not dashed:
+            styles = [  # ('#af0039', '--'),
+                      (red, '-'), (yellow, '-'), (orange, '-'), (blue, '-'),
+                      (red, '--'), (yellow, '--'), (orange, '--'), (blue, '--')
+            ]
+        else:
+            styles = [
+                (red, '--'), (red, '-'), (yellow, '--'), (yellow, '-'),
+                (orange, '-'),  (orange, '--'), (blue, '-'), (blue, '--')
+            ]
         label = '|'.join([str(val) for val in (group if isinstance(group, tuple) else (group,))])
         plt.errorbar(x=csizes,
                      # y=np.multiply(bandwidth_means, number_of_threads),
@@ -154,6 +160,7 @@ if __name__ == '__main__':
     parser.add_argument('--singlecore', help='move the cache bars to values for a single core', action='store_false',
                         dest='multicore')
     parser.add_argument('--ylim', help='The maximum of the y axis', type=int, default=350)
+    parser.add_argument('--dashed', help='If to draw lines solid and dashed, alternating', action='store_true')
     args = parser.parse_args()
 
     print(vars(args))
@@ -164,13 +171,13 @@ if __name__ == '__main__':
             for root, subdirs, filenames in os.walk(args.path):
                 for filename in filenames:
                     if filename[-4:] == '.csv':
-                        filepath = os.path.join(root, filename)
-                        files.append(filepath)
+                            filepath = os.path.join(root, filename)
+                            files.append(filepath)
             print(str(len(files)) + ' files found')
             for file in tqdm(files):
-                process_file(filepath, args.variance, args.only_64, args.system, args.ylim, args.multicore, log)
+                process_file(filepath, args.variance, args.only_64, args.system, args.ylim, args.multicore, log, args.dashed)
         else:
-            process_file(args.path, args.variance, args.only_64, args.system, args.ylim, args.multicore, log)
+            process_file(args.path, args.variance, args.only_64, args.system, args.ylim, args.multicore, log, args.dashed)
         for entry in log:
             print(entry)
         print('Done')
