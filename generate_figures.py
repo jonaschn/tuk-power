@@ -128,13 +128,13 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore,
         cache_sizes_in_kib = {
             'L1': 15 * 32 if multicore else 32,  # 15x 32 KiB/core
             'L2': 15 * 256 if multicore else 256,  # 15x 256 KiB/core
-            'L3': 38400  # 15x 2,5 MiB/core = 37,5 MiB (shared)
+            'L3 (shared)': 38400  # 15x 2,5 MiB/core = 37,5 MiB (shared)
         }
     else: # POWER 8 node with 12 cores
         cache_sizes_in_kib = {
             'L1': 12 * 64 if multicore else 64,  # 12x 64 KiB/core
             'L2': 12 * 512 if multicore else 512,  # 12x 512 KiB/core = 6MiB
-            'L3': 98304  # 12x 8192 KiB/core = 96MiB (shared)
+            'L3 (shared)': 98304  # 12x 8192 KiB/core = 96MiB (shared)
         }
 
     # show cache sizes of L1, L2 and L3
