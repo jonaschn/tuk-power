@@ -33,7 +33,7 @@ def natural_order(text):
     return tuple(int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text))
 
 
-def process_file(filename, show_variance, only_64, system_type, ylim, multicore, log, dashed):
+def process_file(filename, show_variance, only_64, system_type, ylim, multicore, log, dashed, reversed_legend):
     data = pd.read_csv(filename)
     csizes = np.unique(data[colszkey])
 
@@ -147,6 +147,9 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore,
     handles, labels = plt.gca().get_legend_handles_labels()
 
     order = argsort([natural_order(label) for label in labels])
+    if reversed_legend:
+        order = list(reversed(order))
+
     plt.legend([handles[i] for i in order], [labels[i] for i in order], loc=2, prop={'size': 10})
 
     plt.savefig(filename.replace('.csv', '.png'), dpi=200)
@@ -162,6 +165,8 @@ if __name__ == '__main__':
                         dest='multicore')
     parser.add_argument('--ylim', help='The maximum of the y axis', type=int, default=350)
     parser.add_argument('--dashed', help='If to draw lines solid and dashed, alternating', action='store_true')
+    parser.add_argument('--reversed-legend', help='whether to reverse the order of the legend', action='store_true', dest='reversed_legend')
+
     args = parser.parse_args()
 
     print(vars(args))
@@ -176,9 +181,9 @@ if __name__ == '__main__':
                             files.append(filepath)
             print(str(len(files)) + ' files found')
             for file in tqdm(files):
-                process_file(filepath, args.variance, args.only_64, args.system, args.ylim, args.multicore, log, args.dashed)
+                process_file(filepath, args.variance, args.only_64, args.system, args.ylim, args.multicore, log, args.dashed, args.reversed_legend)
         else:
-            process_file(args.path, args.variance, args.only_64, args.system, args.ylim, args.multicore, log, args.dashed)
+            process_file(args.path, args.variance, args.only_64, args.system, args.ylim, args.multicore, log, args.dashed, args.reversed_legend)
         for entry in log:
             print(entry)
         print('Done')
