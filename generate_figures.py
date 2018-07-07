@@ -140,7 +140,8 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore,
     # show cache sizes of L1, L2 and L3
     for cache in cache_sizes_in_kib:
         plt.axvline(cache_sizes_in_kib[cache] * 1024 / 1000, color='k', alpha=.7)
-        plt.text(cache_sizes_in_kib[cache] * 0.6, plt.ylim()[1], cache, color='k', alpha=.7)
+        x_position_factor = 0.2 if cache == 'L3 (shared)' else 0.6
+        plt.text(cache_sizes_in_kib[cache] * x_position_factor , plt.ylim()[1], cache, color='k', alpha=.7)
 
     # print labels in the right order
     handles, labels = plt.gca().get_legend_handles_labels()
