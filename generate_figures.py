@@ -3,6 +3,7 @@ import re
 
 import matplotlib.pyplot as plt
 from matplotlib import ticker, rc
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import argparse
@@ -32,7 +33,7 @@ def natural_order(text):
     return tuple(int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text))
 
 
-def process_file(filename, show_variance, only_64, system_type, ylim, multicore):
+def process_file(filename, show_variance, only_64, system_type, ylim, multicore, log):
     data = pd.read_csv(filename)
     csizes = np.unique(data[colszkey])
 
@@ -47,7 +48,7 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore)
             dtype_cols.append(column)
 
     if not dtype_cols:
-        print('Not enough dimensions to group by. Therefore data type was chosen.')
+        log.append(filename + ': Not enough dimensions to group by. Therefore data type was chosen.')
         dtype_cols.append(dtypekey)
 
     groups = data.groupby(by=dtype_cols)
@@ -157,15 +158,21 @@ if __name__ == '__main__':
 
     print(vars(args))
     try:
+        log = []
         if os.path.isdir(args.path):
-            for root, subdirs, files in os.walk(args.path):
-                for filename in files:
+            files = []
+            for root, subdirs, filenames in os.walk(args.path):
+                for filename in filenames:
                     if filename[-4:] == '.csv':
-                        print('Plotting ' + filename + '...')
                         filepath = os.path.join(root, filename)
-                        process_file(filepath, args.variance, args.only_64, args.system, args.ylim, args.multicore)
+                        files.append(filepath)
+            print(str(len(files)) + ' files found')
+            for file in tqdm(files):
+                process_file(filepath, args.variance, args.only_64, args.system, args.ylim, args.multicore, log)
         else:
-            process_file(args.path, args.variance, args.only_64, args.system, args.ylim, args.multicore)
+            process_file(args.path, args.variance, args.only_64, args.system, args.ylim, args.multicore, log)
+        for entry in log:
+            print(entry)
         print('Done')
     except FileNotFoundError as e:
         print(e)
