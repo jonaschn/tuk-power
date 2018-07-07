@@ -114,7 +114,7 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore,
     plt.minorticks_off()
     plt.xlim(xmin=8)
     plt.gca().yaxis.grid(True, lw=.5, ls='dotted')
-    plt.ylabel('Effective Scan Bandwidth (in GB/s)')
+    plt.ylabel('Throughput (in GB/s)')
 
     prefetching_enabled = "prefetch1" in filename
     column_store = not "rowstore" in filename
