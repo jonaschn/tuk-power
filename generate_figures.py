@@ -75,12 +75,12 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore,
         # styles = [(linestyle, color) for linestyle, color in product(linestyles, colors)]
         if not dashed:
             styles = [  # ('#af0039', '--'),
-                      (red, '-'), (yellow, '-'), (orange, '-'), (blue, '-'),
-                      (red, '--'), (yellow, '--'), (orange, '--'), (blue, '--')
+                      (yellow, '-'), (red, '-'), (orange, '-'), (blue, '-'),
+                      (yellow, '--'), (red, '--'), (orange, '--'), (blue, '--')
             ]
         else:
             styles = [
-                (red, '--'), (red, '-'), (yellow, '--'), (yellow, '-'),
+                (yellow, '--'), (yellow, '-'), (red, '--'), (red, '-'),
                 (orange, '-'),  (orange, '--'), (blue, '-'), (blue, '--')
             ]
         label = '|'.join([str(val) for val in (group if isinstance(group, tuple) else (group,))])
@@ -113,7 +113,7 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore,
     plt.gca().xaxis.set_major_formatter(ticker.FuncFormatter(xFuncFormatter))
     plt.minorticks_off()
     plt.xlim(xmin=8)
-    plt.gca().yaxis.grid(True, lw=.5, ls='--')
+    plt.gca().yaxis.grid(True, lw=.5, ls='dotted')
     plt.ylabel('Effective Scan Bandwidth (in GB/s)')
 
     prefetching_enabled = "prefetch1" in filename
