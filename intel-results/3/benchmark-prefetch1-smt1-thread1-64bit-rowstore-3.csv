@@ -1,0 +1,73 @@
+Column size in KB,Data type,Time in ns,Thread Count,DB type
+8                ,int64    ,828       ,1 threads   ,Row store
+8                ,int64    ,824       ,1 threads   ,Row store
+8                ,int64    ,837       ,1 threads   ,Row store
+16               ,int64    ,1929      ,1 threads   ,Row store
+16               ,int64    ,1905      ,1 threads   ,Row store
+16               ,int64    ,1915      ,1 threads   ,Row store
+32               ,int64    ,5449      ,1 threads   ,Row store
+32               ,int64    ,5474      ,1 threads   ,Row store
+32               ,int64    ,5500      ,1 threads   ,Row store
+48               ,int64    ,12346     ,1 threads   ,Row store
+48               ,int64    ,12349     ,1 threads   ,Row store
+48               ,int64    ,12386     ,1 threads   ,Row store
+64               ,int64    ,17061     ,1 threads   ,Row store
+64               ,int64    ,17254     ,1 threads   ,Row store
+64               ,int64    ,17189     ,1 threads   ,Row store
+96               ,int64    ,26374     ,1 threads   ,Row store
+96               ,int64    ,25774     ,1 threads   ,Row store
+96               ,int64    ,25597     ,1 threads   ,Row store
+128              ,int64    ,36712     ,1 threads   ,Row store
+128              ,int64    ,34649     ,1 threads   ,Row store
+128              ,int64    ,34165     ,1 threads   ,Row store
+256              ,int64    ,70948     ,1 threads   ,Row store
+256              ,int64    ,68467     ,1 threads   ,Row store
+256              ,int64    ,68624     ,1 threads   ,Row store
+384              ,int64    ,103538    ,1 threads   ,Row store
+384              ,int64    ,110842    ,1 threads   ,Row store
+384              ,int64    ,102460    ,1 threads   ,Row store
+480              ,int64    ,131739    ,1 threads   ,Row store
+480              ,int64    ,128719    ,1 threads   ,Row store
+480              ,int64    ,128167    ,1 threads   ,Row store
+512              ,int64    ,143324    ,1 threads   ,Row store
+512              ,int64    ,136408    ,1 threads   ,Row store
+512              ,int64    ,136554    ,1 threads   ,Row store
+1024             ,int64    ,292382    ,1 threads   ,Row store
+1024             ,int64    ,280729    ,1 threads   ,Row store
+1024             ,int64    ,283396    ,1 threads   ,Row store
+2048             ,int64    ,603995    ,1 threads   ,Row store
+2048             ,int64    ,547750    ,1 threads   ,Row store
+2048             ,int64    ,547383    ,1 threads   ,Row store
+3840             ,int64    ,2075371   ,1 threads   ,Row store
+3840             ,int64    ,1890910   ,1 threads   ,Row store
+3840             ,int64    ,1860355   ,1 threads   ,Row store
+4096             ,int64    ,2479994   ,1 threads   ,Row store
+4096             ,int64    ,2336220   ,1 threads   ,Row store
+4096             ,int64    ,2336159   ,1 threads   ,Row store
+8192             ,int64    ,9156101   ,1 threads   ,Row store
+8192             ,int64    ,9155506   ,1 threads   ,Row store
+8192             ,int64    ,9187220   ,1 threads   ,Row store
+16384            ,int64    ,18648106  ,1 threads   ,Row store
+16384            ,int64    ,18336687  ,1 threads   ,Row store
+16384            ,int64    ,18425492  ,1 threads   ,Row store
+32768            ,int64    ,36565512  ,1 threads   ,Row store
+32768            ,int64    ,36720600  ,1 threads   ,Row store
+32768            ,int64    ,37499411  ,1 threads   ,Row store
+38400            ,int64    ,42941166  ,1 threads   ,Row store
+38400            ,int64    ,42952209  ,1 threads   ,Row store
+38400            ,int64    ,43149452  ,1 threads   ,Row store
+65536            ,int64    ,73806270  ,1 threads   ,Row store
+65536            ,int64    ,74069666  ,1 threads   ,Row store
+65536            ,int64    ,73459195  ,1 threads   ,Row store
+131072           ,int64    ,146967917 ,1 threads   ,Row store
+131072           ,int64    ,146712600 ,1 threads   ,Row store
+131072           ,int64    ,147299324 ,1 threads   ,Row store
+262144           ,int64    ,294653682 ,1 threads   ,Row store
+262144           ,int64    ,294274001 ,1 threads   ,Row store
+262144           ,int64    ,294425649 ,1 threads   ,Row store
+1.04858e+06      ,int64    ,1179129248,1 threads   ,Row store
+1.04858e+06      ,int64    ,1173509391,1 threads   ,Row store
+1.04858e+06      ,int64    ,1170944013,1 threads   ,Row store
+4.1943e+06       ,int64    ,4705269629,1 threads   ,Row store
+4.1943e+06       ,int64    ,4716489744,1 threads   ,Row store
+4.1943e+06       ,int64    ,4712217074,1 threads   ,Row store
