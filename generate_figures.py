@@ -33,7 +33,7 @@ def natural_order(text):
     return tuple(int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text))
 
 
-def process_file(filename, show_variance, only_64, system_type, ylim, multicore, log, dashed):
+def process_file(filename, show_variance, only_64, system_type, ylim, multicore, log, dashed, reversed_legend):
     data = pd.read_csv(filename)
     csizes = np.unique(data[colszkey])
 
@@ -128,25 +128,29 @@ def process_file(filename, show_variance, only_64, system_type, ylim, multicore,
         cache_sizes_in_kib = {
             'L1': 15 * 32 if multicore else 32,  # 15x 32 KiB/core
             'L2': 15 * 256 if multicore else 256,  # 15x 256 KiB/core
-            'L3': 38400  # 15x 2,5 MiB/core = 37,5 MiB (shared)
+            'L3 (shared)': 38400  # 15x 2,5 MiB/core = 37,5 MiB (shared)
         }
     else: # POWER 8 node with 12 cores
         cache_sizes_in_kib = {
             'L1': 12 * 64 if multicore else 64,  # 12x 64 KiB/core
             'L2': 12 * 512 if multicore else 512,  # 12x 512 KiB/core = 6MiB
-            'L3': 98304  # 12x 8192 KiB/core = 96MiB (shared)
+            'L3 (shared)': 98304  # 12x 8192 KiB/core = 96MiB (shared)
         }
 
     # show cache sizes of L1, L2 and L3
     for cache in cache_sizes_in_kib:
         plt.axvline(cache_sizes_in_kib[cache] * 1024 / 1000, color='k', alpha=.7)
-        plt.text(cache_sizes_in_kib[cache] * 0.6, plt.ylim()[1], cache, color='k', alpha=.7)
+        x_position_factor = 0.2 if cache == 'L3 (shared)' else 0.6
+        plt.text(cache_sizes_in_kib[cache] * x_position_factor , plt.ylim()[1], cache, color='k', alpha=.7)
 
     # print labels in the right order
     handles, labels = plt.gca().get_legend_handles_labels()
 
     order = argsort([natural_order(label) for label in labels])
-    plt.legend([handles[i] for i in order], [labels[i] for i in order], loc=2, prop={'size': 10})
+    if reversed_legend:
+        order = list(reversed(order))
+
+    plt.legend([handles[i] for i in order], [labels[i] for i in order], loc=1, prop={'size': 10})
 
     plt.savefig(filename.replace('.csv', '.png'), dpi=200)
     plt.close()
@@ -161,6 +165,8 @@ if __name__ == '__main__':
                         dest='multicore')
     parser.add_argument('--ylim', help='The maximum of the y axis', type=int, default=350)
     parser.add_argument('--dashed', help='If to draw lines solid and dashed, alternating', action='store_true')
+    parser.add_argument('--reversed-legend', help='whether to reverse the order of the legend', action='store_true', dest='reversed_legend')
+
     args = parser.parse_args()
 
     print(vars(args))
@@ -175,9 +181,9 @@ if __name__ == '__main__':
                             files.append(filepath)
             print(str(len(files)) + ' files found')
             for file in tqdm(files):
-                process_file(filepath, args.variance, args.only_64, args.system, args.ylim, args.multicore, log, args.dashed)
+                process_file(filepath, args.variance, args.only_64, args.system, args.ylim, args.multicore, log, args.dashed, args.reversed_legend)
         else:
-            process_file(args.path, args.variance, args.only_64, args.system, args.ylim, args.multicore, log, args.dashed)
+            process_file(args.path, args.variance, args.only_64, args.system, args.ylim, args.multicore, log, args.dashed, args.reversed_legend)
         for entry in log:
             print(entry)
         print('Done')
